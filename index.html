@@ -356,6 +356,22 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
   .tone-legend{font-size:11px;padding:8px 10px;gap:6px}
 }
 </style>
+<style>
+.lb-head{text-align:center;margin-bottom:20px}
+.lb-head h2{font-size:23px;margin-bottom:4px}
+.lb-sub{font-size:13px;color:var(--ink-soft)}
+.lb-card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.lb-table{width:100%;border-collapse:collapse;font-size:14px}
+.lb-table th{text-align:left;padding:11px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);border-bottom:1px solid var(--line)}
+.lb-table td{padding:12px 14px;border-bottom:1px solid var(--line)}
+.lb-table tr:last-child td{border-bottom:none}
+.lb-table td:first-child{width:46px;font-weight:700;font-size:15px}
+.lb-table td:nth-child(3){font-weight:700;color:var(--accent)}
+.lb-me{background:var(--accent-soft)}
+.lb-me td{font-weight:700}
+.lb-empty{text-align:center;color:var(--ink-soft);padding:26px 14px}
+.lb-note{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:12px}
+</style>
 </head>
 <body>
 
@@ -369,6 +385,7 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
     <button class="nav-tab" data-view="study" onclick="APP.go('study')">Flashcards</button>
     <button class="nav-tab" data-view="grammar" onclick="APP.go('grammar')">Grammar</button>
     <button class="nav-tab" data-view="progress" onclick="APP.go('progress')">Progress</button>
+    <button class="nav-tab" data-view="leaderboard" onclick="APP.go('leaderboard')">🏆 Rank</button>
   </nav>
   <div class="header-right">
     <button class="icon-btn" onclick="APP.openAbout()" id="aboutBtn" title="About & contact">ⓘ</button>
@@ -510,6 +527,20 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
     <div id="weekProgressList"></div>
 
     <button class="danger-btn" onclick="APP.resetProgress()">Reset all progress</button>
+  </section>
+
+  <section class="view" id="leaderboardView" hidden>
+    <div class="lb-head">
+      <h2>🏆 Leaderboard</h2>
+      <p class="lb-sub">Live ranking — updates as everyone studies. You're highlighted.</p>
+    </div>
+    <div class="lb-card">
+      <table class="lb-table">
+        <thead><tr><th>#</th><th>Name</th><th>Words</th><th>Streak</th><th>Time</th></tr></thead>
+        <tbody id="lbBody"><tr><td colspan="5" class="lb-empty">Connecting…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="lb-note">Ranked by words learned · 🔥 day streak · time studied (minutes).</p>
   </section>
 </main>
 
@@ -1986,7 +2017,7 @@ window.addEventListener('resize',()=>{
 
 // ============ APP ============
 const APP = {
-  state:{userName:'',userInitial:'学',currentWeek:0,currentDay:0,currentCard:0,flipped:false,progress:{},streak:0,lastDate:null,theme:'auto',audioOn:true,currentView:'home'},
+  state:{userName:'',userInitial:'学',currentWeek:0,currentDay:0,currentCard:0,flipped:false,progress:{},streak:0,lastDate:null,theme:'auto',audioOn:true,currentView:'home',studySeconds:0},
   speech:null,
   touch:{startX:0,startY:0},
 
@@ -2007,7 +2038,9 @@ const APP = {
       this.updateGreeting();
       this.updateHomeStats();
       this.updateTodayTask();
+      this.syncLeaderboard();
     }
+    this.startStudyTimer();
   },
 
   load(){
@@ -2058,6 +2091,7 @@ const APP = {
     this.updateGreeting();
     this.updateHomeStats();
     this.updateTodayTask();
+    this.syncLeaderboard();
     this.toast(`你好, ${name}!`);
     // Auto-launch tour on first ever name save
     if(isFirstTime&&!TOUR.hasSeenTour()){
@@ -2121,9 +2155,11 @@ const APP = {
     document.getElementById('studyView').hidden=view!=='study';
     document.getElementById('grammarView').hidden=view!=='grammar';
     document.getElementById('progressView').hidden=view!=='progress';
+    document.getElementById('leaderboardView').hidden=view!=='leaderboard';
     document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.view===view));
     this.state.currentView=view;
     if(view==='progress')this.renderProgress();
+    if(view==='leaderboard')this.renderLeaderboard();
     if(view==='home'){this.renderRoadmap();this.renderWeeks();this.updateHomeStats();this.updateTodayTask();}
     if(view==='study')this.renderStudyView(); // direct call — no recursion
     window.scrollTo({top:0,behavior:'smooth'});
@@ -2353,6 +2389,7 @@ const APP = {
     this.state.progress[key]=status;
     this.save();
     this.bumpStreak();
+    this.syncLeaderboard();
     track('card_rated',{week:this.state.currentWeek+1,word:card[0],rating:status});
     const labels={got_it:'✓ Got it',unsure:'? Marked unsure',again:'↻ Will repeat'};
     this.toast(labels[status]);
@@ -2582,6 +2619,40 @@ const APP = {
     setTimeout(()=>this.toast('Opening your email…'),100);
   },
 
+  // ============ LEADERBOARD (Firebase) ============
+  esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));},
+  syncLeaderboard(){
+    if(!window.HANLU_FB||!this.state.userName)return;
+    const s=this.overallStats();
+    window.HANLU_FB.pushStats({name:this.state.userName,words:s.got_it,streak:this.state.streak||0,minutes:Math.round((this.state.studySeconds||0)/60)});
+  },
+  startStudyTimer(){
+    if(this._studyTimer)return;
+    this._studyTimer=setInterval(()=>{
+      if(this.state.currentView==='study'&&!document.hidden){
+        this.state.studySeconds=(this.state.studySeconds||0)+5;
+        this._tick=(this._tick||0)+1;
+        if(this._tick%12===0){this.save();this.syncLeaderboard();}
+      }
+    },5000);
+  },
+  renderLeaderboard(){
+    const body=document.getElementById('lbBody');
+    if(!window.HANLU_FB){body.innerHTML='<tr><td colspan="5" class="lb-empty">The leaderboard needs an internet connection.</td></tr>';return;}
+    this.syncLeaderboard();
+    if(this._lbSubscribed)return;
+    this._lbSubscribed=true;
+    body.innerHTML='<tr><td colspan="5" class="lb-empty">Loading…</td></tr>';
+    window.HANLU_FB.subscribe(rows=>{
+      const myUid=window.HANLU_FB.uid();
+      if(!rows.length){body.innerHTML='<tr><td colspan="5" class="lb-empty">No one on the board yet — study a card to claim #1! 🏆</td></tr>';return;}
+      body.innerHTML=rows.map((r,i)=>{
+        const rank=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+        const me=r.id===myUid?' class="lb-me"':'';
+        return '<tr'+me+'><td>'+rank+'</td><td>'+(this.esc(r.name)||'—')+'</td><td>'+(r.words||0)+'</td><td>'+(r.streak||0)+' 🔥</td><td>'+(r.minutes||0)+'m</td></tr>';
+      }).join('');
+    });
+  },
   toast(msg){
     const t=document.getElementById('toast');
     t.textContent=msg;
@@ -2592,6 +2663,52 @@ const APP = {
 };
 
 document.addEventListener('DOMContentLoaded',()=>APP.init());
+</script>
+
+<!-- Firebase — live leaderboard backend (loads from CDN; flashcards still work offline without it) -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, collection, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBWsax2wiu21i-gmnSdobD0QSXWIrGdMqA",
+  authDomain: "hanlu-3e6ad.firebaseapp.com",
+  projectId: "hanlu-3e6ad",
+  storageBucket: "hanlu-3e6ad.firebasestorage.app",
+  messagingSenderId: "362687848145",
+  appId: "1:362687848145:web:c36dae3c6be79586deaff0"
+};
+let _uid=null,_db=null,_resolve;
+const ready=new Promise(r=>_resolve=r);
+try{
+  const app=initializeApp(firebaseConfig);
+  const auth=getAuth(app);
+  _db=getFirestore(app);
+  onAuthStateChanged(auth,u=>{if(u){_uid=u.uid;_resolve(true);}});
+  signInAnonymously(auth).catch(e=>console.warn('Hanlu anon sign-in:',e.code||e));
+}catch(e){console.warn('Hanlu firebase init:',e);}
+window.HANLU_FB={
+  ready,
+  uid(){return _uid;},
+  async pushStats(s){
+    await ready;
+    if(!_uid||!_db)return;
+    try{
+      await setDoc(doc(_db,'leaderboard',_uid),{
+        name:String(s.name||'学生').slice(0,40),
+        words:s.words|0,streak:s.streak|0,minutes:s.minutes|0,
+        updated:serverTimestamp()
+      },{merge:true});
+    }catch(e){console.warn('Hanlu pushStats:',e.code||e);}
+  },
+  async subscribe(cb){
+    await ready;
+    if(!_db)return ()=>{};
+    const qy=query(collection(_db,'leaderboard'),orderBy('words','desc'),limit(100));
+    return onSnapshot(qy,snap=>{const rows=[];snap.forEach(d=>rows.push(Object.assign({id:d.id},d.data())));cb(rows);},
+      e=>console.warn('Hanlu subscribe:',e.code||e));
+  }
+};
 </script>
 </body>
 </html>
