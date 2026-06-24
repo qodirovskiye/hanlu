@@ -37,6 +37,21 @@
   --tone1:#ff7a6a; --tone2:#f0b66c; --tone3:#80c190; --tone4:#7aafe6; --tone0:#a8a39a;
   --shadow:0 10px 40px rgba(0,0,0,0.4); --shadow-soft:0 4px 18px rgba(0,0,0,0.3);
 }
+/* ===== Color theme palettes (override --accent; soft auto-derives via color-mix) ===== */
+[data-palette="ocean"]  { --accent:#2f6db0; }
+[data-palette="grape"]   { --accent:#7a5c8f; }
+[data-palette="sunset"]  { --accent:#c9683a; }
+[data-palette="rose"]    { --accent:#bb3f87; }
+[data-palette="duo"]     { --accent:#58a700; }
+[data-palette="teal"]    { --accent:#2a9d8f; }
+[data-theme="dark"][data-palette="ocean"]  { --accent:#6fa8dd; }
+[data-theme="dark"][data-palette="grape"]   { --accent:#b193c4; }
+[data-theme="dark"][data-palette="sunset"]  { --accent:#e4925f; }
+[data-theme="dark"][data-palette="rose"]    { --accent:#dd79bd; }
+[data-theme="dark"][data-palette="duo"]     { --accent:#84cc16; }
+[data-theme="dark"][data-palette="teal"]    { --accent:#3fc7b4; }
+/* Any non-default palette derives its soft tint from the accent so it works in both modes */
+[data-palette]:not([data-palette="jade"]) { --accent-soft:color-mix(in srgb,var(--accent) 16%,var(--bg)); }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',system-ui,sans-serif;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .3s var(--ease),color .3s var(--ease)}
 .han,.hanzi-text{font-family:'Songti SC','STSong','Noto Serif SC',serif}
@@ -355,6 +370,22 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
   .tour-card{width:calc(100vw - 32px);padding:18px;left:16px!important;right:16px}
   .tone-legend{font-size:11px;padding:8px 10px;gap:6px}
 }
+/* ===== Duolingo home banner ===== */
+.duo-banner{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:8px 0 28px}
+/* ===== Progress track toggle ===== */
+.prog-track-toggle{display:flex;gap:6px;justify-content:center;margin:8px 0 18px}
+.ptt-btn{padding:8px 18px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-soft);background:var(--bg-soft);transition:all .2s var(--ease)}
+.ptt-btn.active{background:var(--accent);color:#fff}
+/* ===== Theme picker ===== */
+.theme-modal .tm-title{font-family:'Songti SC',serif;font-size:24px;font-weight:500;margin-bottom:6px}
+.theme-modal .tm-sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.palette-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+.palette-swatch{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 6px;border-radius:14px;border:2px solid var(--line);background:var(--card);transition:all .2s var(--ease)}
+.palette-swatch:hover{border-color:var(--ink-soft);transform:translateY(-2px)}
+.palette-swatch.active{border-color:var(--accent);background:var(--accent-soft)}
+.palette-dot{width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.palette-name{font-size:11px;letter-spacing:.04em;color:var(--ink-soft)}
+.palette-swatch.active .palette-name{color:var(--accent);font-weight:700}
 </style>
 <style>
 .lb-head{text-align:center;margin-bottom:20px}
@@ -382,6 +413,7 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
   </div>
   <nav class="nav-tabs">
     <button class="nav-tab" data-view="home" onclick="APP.go('home')">Home</button>
+    <button class="nav-tab" data-view="duo" onclick="APP.go('duo')">🦉 Duolingo</button>
     <button class="nav-tab" data-view="study" onclick="APP.go('study')">Flashcards</button>
     <button class="nav-tab" data-view="grammar" onclick="APP.go('grammar')">Grammar</button>
     <button class="nav-tab" data-view="progress" onclick="APP.go('progress')">Progress</button>
@@ -391,6 +423,7 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
     <button class="icon-btn" onclick="APP.openAbout()" id="aboutBtn" title="About & contact">ⓘ</button>
     <button class="icon-btn" onclick="TOUR.start()" id="tourBtn" title="App tour / help">?</button>
     <button class="icon-btn" onclick="APP.toggleAudio()" id="audioToggle" title="Toggle audio">🔊</button>
+    <button class="icon-btn" onclick="APP.openThemePicker()" id="paletteBtn" title="Color theme">🎨</button>
     <button class="icon-btn" onclick="APP.toggleTheme()" id="themeToggle" title="Toggle dark mode">🌙</button>
     <button class="user-chip" onclick="APP.editName()">
       <span class="avatar" id="avatar">学</span>
@@ -432,7 +465,7 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
   <!-- STUDY VIEW -->
   <section class="view flashcard-view" id="studyView" hidden>
     <div class="fv-header">
-      <button class="back-btn" onclick="APP.go('home')">← Home</button>
+      <button class="back-btn" onclick="APP.backFromStudy()">← Back</button>
       <div class="week-heading">
         <h2 class="han" id="weekHeading">Week 1</h2>
         <div class="week-sub" id="weekSubheading">Foundations</div>
@@ -460,11 +493,13 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
               <div class="label-tag">Meaning</div>
               <div class="meaning" id="meaning">I, me</div>
               <div class="meaning-pinyin" id="meaningPinyin">wǒ</div>
-              <div class="divider"></div>
-              <div class="label-tag">Example</div>
-              <div class="example-hanzi han" id="exampleHanzi">我是学生。</div>
-              <div class="example-pinyin" id="examplePinyin">Wǒ shì xuésheng.</div>
-              <div class="example-english" id="exampleEnglish">I am a student.</div>
+              <div id="exampleBlock">
+                <div class="divider"></div>
+                <div class="label-tag">Example</div>
+                <div class="example-hanzi han" id="exampleHanzi">我是学生。</div>
+                <div class="example-pinyin" id="examplePinyin">Wǒ shì xuésheng.</div>
+                <div class="example-english" id="exampleEnglish">I am a student.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -523,7 +558,11 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
       <div class="ov-stat"><div class="num" id="ovTotal">0/840</div><div class="lbl">Total</div></div>
     </div>
 
-    <div class="section-title">Weekly Breakdown</div>
+    <div class="prog-track-toggle">
+      <button class="ptt-btn active" data-pt="hsk" onclick="APP.setProgressTrack('hsk')">HSK Weekly</button>
+      <button class="ptt-btn" data-pt="duo" onclick="APP.setProgressTrack('duo')">🦉 Duolingo</button>
+    </div>
+    <div class="section-title" id="progBreakdownTitle">Weekly Breakdown</div>
     <div id="weekProgressList"></div>
 
     <button class="danger-btn" onclick="APP.resetProgress()">Reset all progress</button>
@@ -542,7 +581,41 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
     </div>
     <p class="lb-note">Ranked by words learned · 🔥 day streak · time studied (minutes).</p>
   </section>
+
+  <!-- DUOLINGO VOCABULARY VIEW -->
+  <section class="view" id="duoView" hidden>
+    <div class="hero">
+      <h1 class="han">🦉 Duolingo 词汇</h1>
+      <div class="subtitle">The full Duolingo Mandarin vocabulary — 1,500 words in course order</div>
+    </div>
+
+    <div class="duo-banner">
+      <div class="banner-stat"><div class="num" id="duoLearned">0</div><div class="lbl">Words learned</div></div>
+      <div class="banner-stat"><div class="num" id="duoSection">1</div><div class="lbl">Section</div></div>
+      <div class="banner-stat"><div class="num" id="duoPct">0%</div><div class="lbl">Complete</div></div>
+    </div>
+
+    <div class="today-task" id="duoTask">
+      <div class="today-label">Continue Duolingo</div>
+      <div class="today-name" id="duoTodayName">Section 1 · Greeting 1</div>
+      <div class="today-sub" id="duoTodaySub">10 words · ~10 min</div>
+      <button class="primary-action" onclick="APP.duoContinue()">Continue studying →</button>
+    </div>
+
+    <div class="section-title">All Sections</div>
+    <div class="weeks-grid" id="duoSectionsGrid"></div>
+  </section>
 </main>
+
+<!-- Theme Picker Modal -->
+<div class="modal-backdrop" id="themeModal" onclick="if(event.target===this)APP.closeThemePicker()">
+  <div class="modal theme-modal">
+    <h2 class="tm-title">🎨 Color theme</h2>
+    <p class="tm-sub">Pick an accent. Applies everywhere, in light and dark mode.</p>
+    <div class="palette-grid" id="paletteGrid"></div>
+    <button class="secondary-btn" onclick="APP.closeThemePicker()">Done</button>
+  </div>
+</div>
 
 <!-- About / Contact Modal -->
 <div class="modal-backdrop" id="aboutModal" onclick="if(event.target===this)APP.closeAbout()">
@@ -2015,15 +2088,1749 @@ window.addEventListener('resize',()=>{
   if(!document.getElementById('tourOverlay').hidden)TOUR.render();
 });
 
+// ============ DUOLINGO VOCABULARY (separate track) ============
+const DUOLINGO = [
+  {
+    title:"Section 1",
+    theme:"Greeting 1, Numbers, Name",
+    phase:"6 lessons",
+    days:[
+      {name:"Greeting 1", words:[
+        ["你","nǐ","you"],
+        ["好","hǎo","good"],
+        ["再见","zài jiàn","goodbye"],
+        ["再","zài","again"],
+        ["见","jiàn","to see"]
+      ]},
+      {name:"Numbers", words:[
+        ["三","sān","three"],
+        ["一","yī","one"],
+        ["七","qī","seven"],
+        ["八","bā","eight"],
+        ["十","shí","ten"],
+        ["零","líng","zero"],
+        ["元","yuán","Chinese yuan currency unit"],
+        ["五","wǔ","five"],
+        ["九","jiǔ","nine"],
+        ["百","bǎi","one hundred"],
+        ["二","èr","two"],
+        ["四","sì","four"],
+        ["六","liù","six"]
+      ]},
+      {name:"Name", words:[
+        ["叫","jiào","to be called"],
+        ["我","wǒ","I"],
+        ["张","zhāng","surname Zhang"],
+        ["李","lǐ","surname Li"],
+        ["华","huá","given name Huá"],
+        ["明","míng","given name Ming"],
+        ["名字","míng zi","given name"],
+        ["什么","shén me","what"],
+        ["名","míng","name"],
+        ["字","zì","letter"],
+        ["什","shén","Assorted"],
+        ["么","me","What"],
+        ["姓","xìng","surname"],
+        ["王","wáng","surname Wang"],
+        ["呢","ne","question particle"]
+      ]},
+      {name:"Greeting 2", words:[
+        ["很","hěn","very"],
+        ["高兴","gāo xìng","happy"],
+        ["高","gāo","tall"],
+        ["兴","xìng","Interest"],
+        ["认识","rèn shi","to know"],
+        ["也","yě","too"],
+        ["认","rèn","recognize"],
+        ["识","shí","knowledge"]
+      ]},
+      {name:"Food 1", words:[
+        ["吃","chī","to eat"],
+        ["饭","fàn","food"],
+        ["鱼","yú","fish"],
+        ["面","miàn","noodles"],
+        ["喝","hē","to drink"],
+        ["水","shuǐ","water"],
+        ["茶","chá","tea"],
+        ["不","bù","not"]
+      ]},
+      {name:"Occupation", words:[
+        ["是","shì","to be"],
+        ["他","tā","he"],
+        ["学生","xué sheng","student"],
+        ["学","xué","to learn"],
+        ["生","shēng","Raw"],
+        ["吗","ma","question particle for 'yes-no' questions"],
+        ["她","tā","she"],
+        ["你们","nǐ men","you (plural)"],
+        ["我们","wǒ men","we"],
+        ["他们","tā men","they"],
+        ["们","men","plural marker for pronouns"],
+        ["老师","lǎo shī","teacher"],
+        ["医生","yī shēng","doctor"],
+        ["她们","tā men","they (females)"],
+        ["老","lǎo","old"],
+        ["师","shī","division"],
+        ["医","yī","medical"]
+      ]},
+    ]
+  },
+  {
+    title:"Section 2",
+    theme:"Contact, Nation, Greeting 3",
+    phase:"11 lessons",
+    days:[
+      {name:"Contact", words:[
+        ["的","de","of"],
+        ["电话","diàn huà","telephone"],
+        ["电","diàn","electricity"],
+        ["话","huà","language"],
+        ["号码","hào mǎ","number"],
+        ["多少","duō shǎo","how many"],
+        ["多","duō","many"],
+        ["少","shǎo","few"],
+        ["号","hào","ordinal number"],
+        ["码","mǎ","code"]
+      ]},
+      {name:"Nation", words:[
+        ["中国","zhōng guó","China"],
+        ["人","rén","person"],
+        ["中","zhōng","middle"],
+        ["国","guó","country"],
+        ["哪","nǎ","how"],
+        ["英国","yīng guó","United Kingdom"],
+        ["美国","měi guó","USA"],
+        ["英","yīng","British"],
+        ["美","měi","American"],
+        ["都","dōu","all"],
+        ["对","duì","correct"],
+        ["加拿大","jiā ná dà","Canada"],
+        ["加","jiā","plus"],
+        ["拿","ná","take"],
+        ["大","dà","big"]
+      ]},
+      {name:"Greeting 3", words:[
+        ["忙","máng","busy"],
+        ["早上","zǎo shang","morning"],
+        ["早","zǎo","early"],
+        ["上","shàng","on"],
+        ["怎么样","zěn me yàng","how"],
+        ["今天","jīn tiān","today"],
+        ["怎","zěn","how"],
+        ["样","yàng","kind"],
+        ["今","jīn","present"],
+        ["天","tiān","day"]
+      ]},
+      {name:"Location 1", words:[
+        ["家","jiā","home"],
+        ["北京","běi jīng","Beijing"],
+        ["在","zài","in"],
+        ["北","běi","north"],
+        ["京","jīng","Capital"],
+        ["哪儿","nǎr","where"],
+        ["纽约","niǔ yuē","New York"],
+        ["香港","xiāng gǎng","Hong Kong"],
+        ["儿","ér","child"],
+        ["纽","niǔ","Button"],
+        ["约","yuē","approximately"],
+        ["香","xiāng","Fragrant"],
+        ["港","gǎng","Harbor"],
+        ["住","zhù","to live"],
+        ["伦敦","lún dūn","London"],
+        ["台湾","tái wān","Taiwan"],
+        ["伦","lún","Lun"],
+        ["敦","dūn","London"],
+        ["台","tái","Taiwan (Abbr)"],
+        ["湾","wān","Bay"]
+      ]},
+      {name:"Phrases 1", words:[
+        ["谢谢","xiè xie","thanks"],
+        ["不客气","bù kè qi","You're welcome"],
+        ["谢","xiè","to thank"],
+        ["客","kè","customer"],
+        ["气","qì","Gas"],
+        ["对不起","duì bu qǐ","sorry"],
+        ["没关系","méi guān xi","it doesn't matter"],
+        ["起","qǐ","To rise"],
+        ["没","méi","not"],
+        ["关","guān","to close"],
+        ["系","xì","to connect"]
+      ]},
+      {name:"Family 1", words:[
+        ["爸爸","bà ba","dad"],
+        ["妈妈","mā ma","mom"],
+        ["爱","ài","love"],
+        ["家人","jiā rén","family"],
+        ["爸","bà","dad"],
+        ["妈","mā","mom"],
+        ["谁","shéi","who"],
+        ["那","nà","that"],
+        ["个","gè","individual"],
+        ["这","zhè","this"],
+        ["哥哥","gē ge","older brother"],
+        ["姐姐","jiě jie","older sister"],
+        ["有","yǒu","to have"],
+        ["哥","gē","older brother"],
+        ["姐","jiě","older sister"],
+        ["弟弟","dì di","younger brother"],
+        ["和","hé","and"],
+        ["妹妹","mèi mei","younger sister"],
+        ["弟","dì","younger brother"],
+        ["妹","mèi","younger sister"]
+      ]},
+      {name:"Phrases 2", words:[
+        ["请问","qǐng wèn","excuse me"],
+        ["知道","zhī dào","to know"],
+        ["问","wèn","to ask"],
+        ["请","qǐng","please"],
+        ["知","zhī","to know"],
+        ["道","dào","road"],
+        ["说","shuō","to speak or say"],
+        ["英语","yīng yǔ","English language"],
+        ["汉语","hàn yǔ","Chinese language"],
+        ["汉","hàn","Han ethnic group"],
+        ["语","yǔ","language"],
+        ["帮助","bāng zhù","to help"],
+        ["次","cì","next in sequence"],
+        ["帮","bāng","to help"],
+        ["助","zhù","to help"]
+      ]},
+      {name:"Greeting 4", words:[
+        ["早安","zǎo ān","good morning"],
+        ["晚安","wǎn ān","good evening"],
+        ["一会儿","yī huìr","a moment"],
+        ["会","huì","can"],
+        ["安","ān","quiet"],
+        ["最近","zuì jìn","recently"],
+        ["好久不见","hǎo jiǔ bu jiàn","long time no see"],
+        ["不错","bù cuò","not bad"],
+        ["最","zuì","most"],
+        ["近","jìn","near"],
+        ["久","jiǔ","long time"],
+        ["错","cuò","mistake"]
+      ]},
+      {name:"Drink", words:[
+        ["要","yào","to want"],
+        ["热","rè","to warm up"],
+        ["冰","bīng","ice"],
+        ["牛奶","niú nǎi","cow's milk"],
+        ["咖啡","kā fēi","coffee"],
+        ["牛","niú","ox"],
+        ["奶","nǎi","milk"],
+        ["咖","kā","coffee"],
+        ["啡","fēi","coffee"]
+      ]},
+      {name:"Location 2", words:[
+        ["洗手间","xǐ shǒu jiān","bathroom"],
+        ["医院","yī yuàn","hospital"],
+        ["洗","xǐ","to wash"],
+        ["手","shǒu","hand"],
+        ["间","jiān","room"],
+        ["院","yuàn","courtyard"],
+        ["这儿","zhèr","here"],
+        ["那儿","nàr","there"],
+        ["饭馆","fàn guǎn","restaurant"],
+        ["馆","guǎn","building"]
+      ]},
+      {name:"Time 1", words:[
+        ["年","nián","year"],
+        ["月","yuè","moon"],
+        ["几","jǐ","how much"],
+        ["〇","líng","zero"],
+        ["星期","xīng qī","week"],
+        ["明天","míng tiān","tomorrow"],
+        ["日","rì","sun"],
+        ["星","xīng","star"],
+        ["期","qī","period of time"],
+        ["点","diǎn","o'clock"],
+        ["现在","xiàn zài","now"],
+        ["半","bàn","half"],
+        ["现","xiàn","to appear"]
+      ]},
+    ]
+  },
+  {
+    title:"Section 3",
+    theme:"Family 2, Telephone, People 1",
+    phase:"13 lessons",
+    days:[
+      {name:"Family 2", words:[
+        ["孩子","hái zi","child"],
+        ["两","liǎng","two"],
+        ["孩","hái","child"],
+        ["子","zǐ","son"],
+        ["女儿","nǚ ér","daughter"],
+        ["儿子","ér zi","son"],
+        ["岁","suì","years of age"],
+        ["女","nǚ","female"],
+        ["妻子","qī zǐ","wife"],
+        ["丈夫","zhàng fu","husband"],
+        ["妻","qī","wife"],
+        ["丈","zhàng","husband"],
+        ["夫","fū","husband"],
+        ["猫","māo","cat"],
+        ["它","tā","it"],
+        ["狗","gǒu","dog"]
+      ]},
+      {name:"Telephone", words:[
+        ["喂","wéi","hey"],
+        ["慢","màn","slow"],
+        ["一点儿","yī diǎnr","a little"],
+        ["快","kuài","fast"],
+        ["得","dé","to get"],
+        ["明白","míng bai","to understand"],
+        ["白","bái","white"]
+      ]},
+      {name:"People 1", words:[
+        ["漂亮","piào liang","pretty"],
+        ["漂","piāo","to float"],
+        ["亮","liàng","bright"],
+        ["朋友","péng you","friend"],
+        ["男","nán","male"],
+        ["矮","ǎi","short (in height"],
+        ["朋","péng","friend"],
+        ["友","yǒu","friend"],
+        ["可爱","kě ài","cute"],
+        ["非常","fēi cháng","very"],
+        ["可","kě","can"],
+        ["非","fēi","to not be"],
+        ["常","cháng","always"]
+      ]},
+      {name:"Time 2", words:[
+        ["上午","shàng wǔ","morning"],
+        ["分","fēn","minute"],
+        ["下午","xià wǔ","afternoon"],
+        ["晚上","wǎn shang","evening"],
+        ["午","wǔ","noon"],
+        ["晚","wǎn","evening"],
+        ["下","xià","down"],
+        ["每","měi","each"],
+        ["中午","zhōng wǔ","noon"],
+        ["周末","zhōu mò","weekend"],
+        ["周","zhōu","to circle"],
+        ["末","mò","tip"],
+        ["昨天","zuó tiān","yesterday"],
+        ["了","le","(modal particle intensifying preceding clause)"],
+        ["做","zuò","to do"],
+        ["昨","zuó","yesterday"],
+        ["今年","jīn nián","this year"],
+        ["去年","qù nián","last year"],
+        ["明年","míng nián","next year"],
+        ["去","qù","to go"]
+      ]},
+      {name:"Location 3", words:[
+        ["旁边","páng biān","next to"],
+        ["左边","zuǒ bian","to the left of"],
+        ["右边","yòu bian","to the right of"],
+        ["旁","páng","beside"],
+        ["左","zuǒ","left"],
+        ["右","yòu","right"],
+        ["边","biān","side"],
+        ["前面","qián miàn","ahead"],
+        ["后面","hòu miàn","rear"],
+        ["学校","xué xiào","school"],
+        ["前","qián","front"],
+        ["后","hòu","back"],
+        ["校","jiào","to check"],
+        ["走","zǒu","to walk"],
+        ["到","dào","to arrive"],
+        ["路","lù","road"],
+        ["怎么","zěn me","how?"],
+        ["哪里","nǎ lǐ","where?"],
+        ["这里","zhè lǐ","here"],
+        ["那里","nà li","there"],
+        ["往","wǎng","to go (in a direction)"],
+        ["里","lǐ","inside"]
+      ]},
+      {name:"Hobbies 1", words:[
+        ["喜欢","xǐ huan","to like"],
+        ["看","kān","to look after"],
+        ["书","shū","book"],
+        ["喜","xǐ","to like"],
+        ["欢","huān","joyous"],
+        ["玩","wán","to play"],
+        ["电脑","diàn nǎo","computer"],
+        ["游戏","yóu xì","game"],
+        ["脑","nǎo","brain"],
+        ["游","yóu","swimt"],
+        ["戏","xì","trick"],
+        ["听","yǐn","to listen"],
+        ["音乐","yīn yuè","music"],
+        ["歌","gē","song"],
+        ["音","yīn","sound"],
+        ["乐","lè","happy"],
+        ["跳舞","tiào wǔ","to dance"],
+        ["唱","chàng","to sing"],
+        ["跳","tiào","to jump"],
+        ["舞","wǔ","to dance"]
+      ]},
+      {name:"Daily Routine 1", words:[
+        ["起床","qǐ chuáng","to get out of bed"],
+        ["上学","shàng xué","to go to school"],
+        ["上班","shàng bān","to go to work"],
+        ["早饭","zǎo fàn","breakfast"],
+        ["床","chuáng","bed"],
+        ["班","bān","class"],
+        ["从","cóng","from"],
+        ["睡觉","shuì jiào","to go to bed"],
+        ["午饭","wǔ fàn","lunch"],
+        ["睡","shuì","to sleep"],
+        ["觉","jiào","a nap"],
+        ["放学","fàng xué","to finish school (for the day)"],
+        ["下班","xià bān","to finish work (for the day)"],
+        ["回","huí","to return"],
+        ["晚饭","wǎn fàn","dinner"],
+        ["放","fàng","to put"]
+      ]},
+      {name:"Payment", words:[
+        ["钱","qián","money"],
+        ["块","kuài","a piece of (cloth, cake, soap, money)"],
+        ["只","zhǐ","only"],
+        ["买","mǎi","to buy"],
+        ["一共","yī gòng","altogether"],
+        ["毛","máo","feather"],
+        ["共","gòng","common"],
+        ["信用卡","xìn yòng kǎ","credit card"],
+        ["收","shōu","to receive"],
+        ["千","qiān","thousand"],
+        ["信","xìn","letter"],
+        ["用","yòng","to use"],
+        ["卡","kǎ","card"],
+        ["贵","guì","expensive"],
+        ["便宜","biàn yí","cheap"],
+        ["现金","xiàn jīn","cash"],
+        ["便","biàn","convenient"],
+        ["宜","yí","proper"],
+        ["金","jīn","gold"],
+        ["太","tài","too (much)"],
+        ["万","mò","ten thousand"],
+        ["行","xíng","OK!"]
+      ]},
+      {name:"Entertainment", words:[
+        ["想","xiǎng","to think"],
+        ["干","gān","dry"],
+        ["影","yǐng","picture"],
+        ["视","shì","to look at"],
+        ["电视","diàn shì","television"],
+        ["电影","diàn yǐng","movie"],
+        ["报纸","bào zhǐ","newspaper"],
+        ["上网","shàng wǎng","to go online"],
+        ["报","bào","to announce"],
+        ["纸","zhǐ","paper"],
+        ["网","wǎng","net"],
+        ["手机","shǒu jī","cell phone"],
+        ["新闻","xīn wén","news"],
+        ["机","jī","machine"],
+        ["新","xīn","new"],
+        ["闻","wén","to hear"],
+        ["明星","míng xīng","star"],
+        ["体育","tǐ yù","sports"],
+        ["节目","jié mù","program"],
+        ["韩国","hán guó","South Korea (Republic of Korea)"],
+        ["体","tǐ","body"],
+        ["节","jiē","festival"],
+        ["韩","hán","Korea"],
+        ["育","yù","to have children"],
+        ["目","mù","eye"]
+      ]},
+      {name:"Location 4", words:[
+        ["桌","zhuō","table"],
+        ["找","zhǎo","to try to find"],
+        ["桌子","zhuō zi","table"],
+        ["椅子","yǐ zi","chair"],
+        ["椅","yǐ","chair"],
+        ["房间","fáng jiān","room"],
+        ["冰箱","bīng xiāng","refrigerator"],
+        ["外","wài","outside"],
+        ["房","fáng","house"],
+        ["箱","xiāng","box"]
+      ]},
+      {name:"Restaurant", words:[
+        ["位","wèi","classifier for people"],
+        ["等","děng","to wait for"],
+        ["一下","yī xià","a bit"],
+        ["进","jìn","enter"],
+        ["坐","zuò","to sit"],
+        ["菜单","cài dān","menu"],
+        ["英文","yīng wén","English (language)"],
+        ["菜","cài","dish (type of food)"],
+        ["单","dān","bill"],
+        ["文","wén","language"],
+        ["服务员","fú wù yuán","waiter"],
+        ["点菜","diǎn cài","to order dishes (in a restaurant)"],
+        ["买单","mǎi dān","to pay the restaurant bill"],
+        ["订位","dìng wèi","reservation"],
+        ["服","fú","clothes"],
+        ["务","wù","business"],
+        ["员","yuán","person"],
+        ["订","dìng","to order"]
+      ]},
+      {name:"Supermarket", words:[
+        ["些","xiē","some"],
+        ["西","xī","West"],
+        ["东","dōng","East"],
+        ["东西","dōng xī","thing"],
+        ["超市","chāo shì","supermarket"],
+        ["水果","shuǐ guǒ","fruit"],
+        ["超","chāo","super"],
+        ["市","shì","market"],
+        ["果","guǒ","fruit"],
+        ["给","gěi","give"],
+        ["苹果","píng guǒ","apple"],
+        ["西瓜","xī guā","watermelon"],
+        ["苹","píng","apple"],
+        ["瓜","guā","melon"],
+        ["鸡蛋","jī dàn","(chicken) egg"],
+        ["新鲜","xīn xiān","fresh (experience, food etc)"],
+        ["鸡","jī","chicken"],
+        ["蛋","dàn","egg"],
+        ["鲜","xiān","fresh"],
+        ["蔬菜","shū cài","vegetables"],
+        ["蔬","shū","vegetables"],
+        ["包","bāo","package"],
+        ["米","mǐ","rice (uncooked)"],
+        ["面包","miàn bāo","bread"],
+        ["袋","dài","bag"],
+        ["糖","táng","sugar"]
+      ]},
+      {name:"Hobbies 2", words:[
+        ["为","wéi","for"],
+        ["习","xí","to practice"],
+        ["学习","xué xí","to learn"],
+        ["中文","zhōng wén","Chinese language"],
+        ["为什么","wèi shén me","why?"],
+        ["因为","yīn wèi","because"],
+        ["所以","suǒ yǐ","so"],
+        ["西班牙","xī bān yá","Spain"],
+        ["因","yīn","cause"],
+        ["所","suǒ","actually"],
+        ["以","yǐ","to use"],
+        ["牙","yá","tooth"],
+        ["旅游","lǚ yóu","to travel"],
+        ["爱好","ài hào","hobby"],
+        ["西班牙语","xī bān yá yǔ","Spanish language"],
+        ["轻松","qīng sōng","relaxed"],
+        ["旅","lǚ","trip"],
+        ["轻","qīng","light"],
+        ["松","sōng","loose"],
+        ["照相机","zhào xiàng jī","camera"],
+        ["印度","yìn dù","India"],
+        ["拍照","pāi zhào","to take a picture"],
+        ["拍","pāi","to pat"],
+        ["照","zhào","Photo"],
+        ["印","yìn","to print"],
+        ["相","xiāng","each other"],
+        ["度","dù","degree (temperature or intensity)"]
+      ]},
+    ]
+  },
+  {
+    title:"Section 4",
+    theme:"Dining 1, Health 1, Transportation",
+    phase:"15 lessons",
+    days:[
+      {name:"Dining 1", words:[
+        ["海","hǎi","ocean"],
+        ["本","běn","classifier for books and print media"],
+        ["还","huán","also"],
+        ["上海","shàng hǎi","Shanghai"],
+        ["还是","hái shi","or"],
+        ["日本","rì běn","Japan"],
+        ["肉","ròu","meat"],
+        ["米饭","mǐ fàn","rice (cooked)"],
+        ["面条","miàn tiáo","noodles"],
+        ["鸡肉","jī ròu","chicken meat"],
+        ["牛肉","niú ròu","beef meat"],
+        ["猪肉","zhū ròu","pork meat"],
+        ["羊肉","yáng ròu","lamb meat"],
+        ["饮料","yǐn liào","drink"],
+        ["猪","zhū","pig"],
+        ["羊","yáng","sheep"],
+        ["饮","yǐn","to drink"],
+        ["料","liào","material"]
+      ]},
+      {name:"Health 1", words:[
+        ["作","zuō","worker"],
+        ["工","gōng","work"],
+        ["累","lěi","tired"],
+        ["工作","gōng zuò","to work"],
+        ["觉得","jué de","to think"],
+        ["有点儿","yǒu diǎnr","slightly"],
+        ["胖","pán","fat"],
+        ["健康","jiàn kāng","health"],
+        ["不要","bù yào","do not"],
+        ["健","jiàn","healthy"],
+        ["康","kāng","healthy"],
+        ["身体","shēn tǐ","the body"],
+        ["注意","zhù yì","to take note of"],
+        ["身","shēn","body"],
+        ["注","zhù","to note"],
+        ["意","yì","meaning"],
+        ["开始","kāi shǐ","to begin"],
+        ["锻炼","duàn liàn","to work out"],
+        ["开","kāi","to open"],
+        ["锻","duàn","to forge"],
+        ["始","shǐ","beginning"],
+        ["炼","liàn","to refine"]
+      ]},
+      {name:"Transportation", words:[
+        ["铁","tiě","iron (metal)"],
+        ["店","diàn","inn"],
+        ["地","de","ground"],
+        ["酒","jiǔ","alcohol"],
+        ["酒店","jiǔ diàn","hotel"],
+        ["地铁","dì tiě","subway"],
+        ["不准","bù zhǔn","to not allow"],
+        ["准","zhǔn","to allow"],
+        ["出租车","chū zū chē","taxi"],
+        ["站","zhàn","A station, stand, or stop"],
+        ["车","chē","car"],
+        ["出","chū","to go out"],
+        ["租","zū","to hire"],
+        ["可以","kě yǐ","can"],
+        ["汽车","qì chē","car"],
+        ["公共","gōng gòng","public"],
+        ["船","chuán","boat"],
+        ["公","gōng","public"],
+        ["汽","qì","steam"]
+      ]},
+      {name:"Shopping 1", words:[
+        ["件","jiàn","matter"],
+        ["衣","yī","clothes"],
+        ["商","shāng","business"],
+        ["商店","shāng diàn","store"],
+        ["衣服","yī fu","clothes"],
+        ["门","mén","door"],
+        ["欢迎","huān yíng","to welcome"],
+        ["迎","yíng","to welcome"],
+        ["您","nín","you (courteous, as opposed to informal 你)"],
+        ["帮忙","bāng máng","to help"],
+        ["需要","xū yào","to need"],
+        ["需","xū","to require"],
+        ["随便","suí biàn","casual"],
+        ["随","suí","to follow"]
+      ]},
+      {name:"Languages", words:[
+        ["读","dòu","GT: read"],
+        ["意思","yì si","GT: meaning"],
+        ["写","xiě","GT: write"],
+        ["难","nán","GT: difficult"],
+        ["思","sī","GT: think"]
+      ]},
+      {name:"Time 3", words:[
+        ["秒","miǎo","GT: second"],
+        ["刻","kè","GT: engraved"],
+        ["差","chā","GT: difference"],
+        ["小时","xiǎo shí","GT: hour"],
+        ["分钟","fēn zhōng","GT: minute"],
+        ["小","xiǎo","GT: small"],
+        ["时","shí","GT: Time"],
+        ["钟","zhōng","GT: bell"],
+        ["整","zhěng","GT: whole"]
+      ]},
+      {name:"Dining 2", words:[
+        ["杯","bēi","GT: cup"],
+        ["啤","pí","GT: beer"],
+        ["德","dé","GT: Morality"],
+        ["德国","dé guó","GT: Germany"],
+        ["啤酒","pí jiǔ","GT: beer"],
+        ["果汁","guǒ zhī","GT: fruit juice"],
+        ["汁","zhī","GT: juice"],
+        ["香蕉","xiāng jiāo","GT: banana"],
+        ["蛋糕","dàn gāo","GT: cake"],
+        ["蕉","jiāo","GT: banana"],
+        ["糕","gāo","GT: cake"],
+        ["碗","wǎn","GT: bowl"],
+        ["杯子","bēi zi","GT: cup"],
+        ["盘子","pán zi","GT: plate"],
+        ["盘","pán","GT: plate"],
+        ["筷子","kuài zi","GT: chopsticks"],
+        ["刀","dāo","GT: Knife"],
+        ["叉","chā","GT: cross"],
+        ["筷","kuài","GT: chopsticks"],
+        ["勺子","sháo zi","GT: Spoon"],
+        ["勺","sháo","GT: Spoon"]
+      ]},
+      {name:"Existence", words:[
+        ["室","shì","GT: room"],
+        ["办","bàn","GT: do"],
+        ["辆","liàng","GT: Vehicles"],
+        ["办公室","bàn gōng shì","GT: office"],
+        ["瓶子","píng zi","GT: bottle"],
+        ["照片","zhào piàn","GT: photo"],
+        ["瓶","píng","GT: bottle"],
+        ["片","piān","GT: sheet"],
+        ["鸟","niǎo","GT: bird"],
+        ["树","shù","GT: tree"]
+      ]},
+      {name:"Sports 1", words:[
+        ["步","bù","GT: step"],
+        ["跑","páo","GT: run"],
+        ["泳","yǒng","GT: swimming"],
+        ["游泳","yóu yǒng","GT: Swim"],
+        ["跑步","pǎo bù","GT: Run"],
+        ["踢","tī","GT: kick"],
+        ["足球","zú qiú","GT: football"],
+        ["打","dá","GT: hit"],
+        ["篮球","lán qiú","GT: basketball"],
+        ["足","jù","GT: leg"],
+        ["篮","lán","GT: basket"],
+        ["球","qiú","GT: ball"],
+        ["运动","yùn dòng","GT: motion"],
+        ["马","mǎ","GT: horse"],
+        ["骑","jì","GT: ride"],
+        ["运","yùn","GT: Transport"],
+        ["动","dòng","GT: move"]
+      ]},
+      {name:"Invitiation 1", words:[
+        ["吧","bā","GT: It"],
+        ["出去","chū qù","GT: Out"],
+        ["时间","shí jiān","GT: time"],
+        ["时候","shí hou","GT: time"],
+        ["空","kōng","GT: air"],
+        ["来","lái","GT: Come"],
+        ["候","hòu","GT: Wait"],
+        ["过","guò","GT: Live"],
+        ["一起","yī qǐ","GT: together"],
+        ["不好意思","bù hǎo yì si","GT: Feel embarrassed"],
+        ["告诉","gào sù","GT: tell"],
+        ["告","gào","GT: Tell"],
+        ["诉","sù","GT: Complaint"],
+        ["约会","yuē huì","GT: appointment"],
+        ["浪漫","làng màn","GT: romantic"],
+        ["浪","làng","GT: wave"],
+        ["漫","màn","GT: Overflow"]
+      ]},
+      {name:"Health 2", words:[
+        ["该","gāi","GT: That"],
+        ["病","bìng","GT: disease"],
+        ["舒","shū","GT: Shu"],
+        ["应","yìng","GT: should"],
+        ["生病","shēng bìng","GT: sick"],
+        ["应该","yīng gāi","GT: should"],
+        ["舒服","shū fu","GT: Comfortably"],
+        ["疼","téng","GT: pain"],
+        ["头","tóu","GT: head"],
+        ["休息","xiū xi","GT: rest"],
+        ["休","xiū","GT: Rest"],
+        ["息","xī","GT: interest"],
+        ["肚子","dù zi","GT: belly"],
+        ["肚","dǔ","GT: tripe"],
+        ["药","yào","GT: medicine"],
+        ["一定","yī dìng","GT: for sure"],
+        ["感冒","gǎn mào","GT: cold"],
+        ["感","gǎn","GT: sense"],
+        ["定","dìng","GT: set"],
+        ["冒","mào","GT: Risk"],
+        ["留","liú","GT: stay"],
+        ["请假","qǐng jià","GT: Ask for leave"],
+        ["发烧","fā shāo","GT: fever"],
+        ["别","bié","GT: do not"],
+        ["发","fā","GT: hair"],
+        ["假","jiǎ","GT: false"],
+        ["烧","shāo","GT: burn"]
+      ]},
+      {name:"Invitation 2", words:[
+        ["派","pài","GT: send"],
+        ["能","néng","GT: can"],
+        ["生日","shēng rì","GT: birthday"],
+        ["派对","pài duì","GT: Party"],
+        ["打扮","dǎ ban","GT: dress up"],
+        ["扮","bàn","GT: Play"],
+        ["希望","xī wàng","GT: hope"],
+        ["跟","gēn","GT: with"],
+        ["希","xī","GT: hope"],
+        ["望","wàng","GT: hope"],
+        ["大家","dà jiā","GT: everyone"],
+        ["公司","gōng sī","GT: the company"],
+        ["正在","zhèng zài","GT: Seizai"],
+        ["正","zhēng","GT: positive"],
+        ["司","sī","GT: Department"],
+        ["事情","shì qing","GT: thing"],
+        ["才","cái","GT: only"],
+        ["事","shì","GT: Thing"],
+        ["情","qíng","GT: situation"]
+      ]},
+      {name:"Dining 3", words:[
+        ["费","fèi","GT: fee"],
+        ["完","wán","GT: Finish"],
+        ["经","jīng","GT: through"],
+        ["已","yǐ","GT: Already"],
+        ["已经","yǐ jīng","GT: already"],
+        ["小费","xiǎo fèi","GT: tip"],
+        ["饱","bǎo","GT: full"],
+        ["好吃","hǎo chī","GT: good to eat"],
+        ["真","zhēn","GT: true"],
+        ["饿","è","GT: hungry"],
+        ["好喝","hǎo hē","GT: Tasty"],
+        ["渴","kě","GT: thirsty"],
+        ["巧克力","qiǎo kè lì","GT: chocolate"],
+        ["味道","wèi dao","GT: taste"],
+        ["甜点","tián diǎn","GT: dessert"],
+        ["甜","tián","GT: sweet"],
+        ["巧","qiǎo","GT: Opportunely"],
+        ["克","kè","GT: Gram"],
+        ["力","lì","GT: force"]
+      ]},
+      {name:"Shopping 2", words:[
+        ["试","shì","GT: test"],
+        ["蓝","lán","GT: blue"],
+        ["条","tiáo","GT: article"],
+        ["裙","qún","GT: skirt"],
+        ["裙子","qún zi","GT: skirt"],
+        ["双","shuāng","GT: double"],
+        ["鞋子","xié zi","GT: Shoe"],
+        ["意大利","yì dà lì","GT: Italy"],
+        ["色","sè","GT: color"],
+        ["鞋","xié","GT: shoe"],
+        ["利","lì","GT: Profit"],
+        ["比","bǐ","GT: ratio"],
+        ["衬衫","chèn shān","GT: shirt"],
+        ["衬","chèn","GT: lining"],
+        ["衫","shān","GT: Shirt"],
+        ["裤子","kù zi","GT: pants"],
+        ["好看","hǎo kàn","GT: good looking"],
+        ["裤","kù","GT: pants"],
+        ["质","zhì","GT: quality"],
+        ["量","liáng","GT: the amount"],
+        ["质量","zhì liàng","GT: quality"]
+      ]},
+      {name:"Body Parts", words:[
+        ["朵","duǒ","GT: Flowers"],
+        ["睛","jīng","GT: eye"],
+        ["绿","lǜ","GT: green"],
+        ["耳","ěr","GT: ear"],
+        ["眼","yǎn","GT: eye"],
+        ["耳朵","ěr duo","GT: ear"],
+        ["眼睛","yǎn jing","GT: eye"],
+        ["头发","tóu fa","GT: hair"],
+        ["脸","liǎn","GT: face"],
+        ["又","yòu","GT: also"],
+        ["黑","hēi","GT: black"],
+        ["嘴巴","zuǐ ba","GT: mouth"],
+        ["鼻子","bí zi","GT: nose"],
+        ["脚","jiǎo","GT: foot"],
+        ["嘴","zuǐ","GT: mouth"],
+        ["鼻","bí","GT: nose"],
+        ["巴","bā","GT: -bar"]
+      ]},
+    ]
+  },
+  {
+    title:"Section 5",
+    theme:"Travel, Weather, Shopping 3",
+    phase:"19 lessons",
+    days:[
+      {name:"Travel", words:[
+        ["远","yuǎn","GT: far"],
+        ["离","chī","GT: from"],
+        ["走路","zǒu lù","GT: walk"],
+        ["开车","kāi chē","GT: Drive a car"],
+        ["飞机","fēi jī","GT: aircraft"],
+        ["机场","jī chǎng","GT: airport"],
+        ["飞","fēi","GT: fly"],
+        ["场","cháng","GT: field"],
+        ["靠","kào","GT: by"],
+        ["停","tíng","GT: stop"],
+        ["火车","huǒ chē","GT: train"],
+        ["票","piào","GT: ticket"],
+        ["机票","jī piào","GT: Air tickets"],
+        ["火","huǒ","GT: fire"],
+        ["迟到","chí dào","GT: be late"],
+        ["让","ràng","GT: Let"],
+        ["怎么办","zěn me bàn","GT: How to do"],
+        ["迟","chí","GT: late"]
+      ]},
+      {name:"Weather", words:[
+        ["冷","lěng","GT: cold"],
+        ["晴","qíng","GT: clear"],
+        ["天气","tiān qì","GT: the weather"],
+        ["雨","yǔ","GT: rain"],
+        ["雪","xuě","GT: snow"],
+        ["阴","yīn","GT: Yin"],
+        ["着","zhāo","GT: The"],
+        ["伞","sǎn","GT: umbrella"],
+        ["带","dài","GT: band"],
+        ["外面","wài miàn","GT: outside"],
+        ["可能","kě néng","GT: may"],
+        ["刮","guā","GT: scratch"],
+        ["风","fēng","GT: wind"],
+        ["如果","rú guǒ","GT: in case"],
+        ["就","jiù","GT: on"],
+        ["从来","cóng lái","GT: Never"],
+        ["如","rú","GT: Such as"],
+        ["里面","lǐ miàn","GT: inside"]
+      ]},
+      {name:"Shopping 3", words:[
+        ["然","rán","GT: However"],
+        ["但","dàn","GT: but"],
+        ["虽","suī","GT: although"],
+        ["短","duǎn","GT: short"],
+        ["长","cháng","GT: long"],
+        ["虽然","suī rán","GT: although"],
+        ["但是","dàn shì","GT: but"],
+        ["红","hóng","GT: red"],
+        ["颜色","yán sè","GT: colour"],
+        ["穿","chuān","GT: wear"],
+        ["颜","yán","GT: Color"],
+        ["黄","huáng","GT: yellow"],
+        ["手表","shǒu biǎo","GT: Watch"],
+        ["卖","mài","GT: Sell"],
+        ["帽子","mào zi","GT: hat"],
+        ["帽","mào","GT: cap"],
+        ["表","biǎo","GT: table"],
+        ["紫","zǐ","GT: purple"]
+      ]},
+      {name:"People 2", words:[
+        ["绍","shào","GT: Introduce"],
+        ["介","jiè","GT: Introduction"],
+        ["介绍","jiè shào","GT: Introduction"],
+        ["帅","shuài","GT: Shuai"],
+        ["笑","xiào","GT: Lol"],
+        ["说话","shuō huà","GT: speak"],
+        ["聪明","cōng ming","GT: clever"],
+        ["别人","bié ren","GT: other people"],
+        ["不但","bù dàn","GT: Not only"],
+        ["而且","ér qiě","GT: and"],
+        ["聪","cōng","GT: Clever"],
+        ["而","ér","GT: and"],
+        ["且","qiě","GT: And"]
+      ]},
+      {name:"Celebration", words:[
+        ["春","chūn","GT: spring"],
+        ["快乐","kuài lè","GT: happy"],
+        ["节日","jié rì","GT: festival"],
+        ["春节","chūn jié","GT: Spring Festival"],
+        ["礼物","lǐ wù","GT: gift"],
+        ["送","sòng","GT: give away"],
+        ["新年","xīn nián","GT: new Year"],
+        ["白酒","bái jiǔ","GT: Spirit"],
+        ["礼","lǐ","GT: ceremony"],
+        ["物","wù","GT: object"],
+        ["干杯","gān bēi","GT: Cheers"],
+        ["祝","zhù","GT: wish"],
+        ["法国","fǎ guó","GT: France"],
+        ["红酒","hóng jiǔ","GT: Red wine"],
+        ["法","fǎ","GT: law"]
+      ]},
+      {name:"Sports 2", words:[
+        ["赛","sài","GT: Competition"],
+        ["练","liàn","GT: practice"],
+        ["练习","liàn xí","GT: Exercise"],
+        ["比赛","bǐ sài","GT: game"],
+        ["好在","hǎo zài","GT: Fortunately"],
+        ["乒乓球","pīng pāng qiú","GT: pingpong"],
+        ["乒","pīng","GT: Table tennis"],
+        ["乓","pāng","GT: Bang"],
+        ["参加","cān jiā","GT: participate"],
+        ["第","dì","GT: The first"],
+        ["参","cān","GT: Ginseng"],
+        ["网球","wǎng qiú","GT: tennis"],
+        ["排球","pái qiú","GT: volleyball"],
+        ["加油","jiā yóu","GT: Refuel"],
+        ["排","pái","GT: row"],
+        ["油","yóu","GT: oil"],
+        ["输","shū","GT: lose"],
+        ["赢","yíng","GT: win"],
+        ["失望","shī wàng","GT: Disappointed"],
+        ["信心","xìn xīn","GT: confidence"],
+        ["失","shī","GT: Lose"],
+        ["心","xīn","GT: heart"]
+      ]},
+      {name:"School", words:[
+        ["同","tóng","GT: with"],
+        ["课","kè","GT: class"],
+        ["教","jiào","GT: teach"],
+        ["教室","jiào shì","GT: Classroom"],
+        ["同学","tóng xué","GT: Classmate"],
+        ["地理","dì lǐ","GT: Geography"],
+        ["理","lǐ","GT: Reason"],
+        ["懂","dǒng","GT: understand"],
+        ["问题","wèn tí","GT: problem"],
+        ["笔","bǐ","GT: pen"],
+        ["题","tí","GT: question"],
+        ["美术","měi shù","GT: art"],
+        ["术","shù","GT: Technique"],
+        ["考试","kǎo shì","GT: examination"],
+        ["准备","zhǔn bèi","GT: ready"],
+        ["考","kǎo","GT: test"],
+        ["备","bèi","GT: Equipment"],
+        ["科学","kē xué","GT: science"],
+        ["科","kē","GT: Family"],
+        ["下课","xià kè","GT: Finish class"]
+      ]},
+      {name:"Family 3", words:[
+        ["爷爷","yé ye","GT: grandfather"],
+        ["奶奶","nǎi nai","GT: grandmother"],
+        ["阿姨","ā yí","GT: Auntie"],
+        ["爷","yé","GT: Father"],
+        ["阿","ā","GT: A"],
+        ["姨","yí","GT: aunt"],
+        ["兄弟姐妹","xiōng dì jiě mèi","GT: brothers and sisters"],
+        ["关系","guān xi","GT: relationship"],
+        ["叔叔","shū shu","GT: uncle"],
+        ["父母","fù mǔ","GT: parents"],
+        ["兄","xiōng","GT: Brother"],
+        ["叔","shū","GT: uncle"],
+        ["父","fù","GT: father"],
+        ["母","mǔ","GT: mother"],
+        ["像","xiàng","GT: image"],
+        ["一样","yī yàng","GT: same"],
+        ["亲戚","qīn qi","GT: relative"],
+        ["戚","qī","GT: Qi"],
+        ["亲","qīn","GT: Dear"]
+      ]},
+      {name:"Gourmet 1", words:[
+        ["拉面","lā miàn","GT: Hand-Pulled Noodle"],
+        ["点心","diǎn xin","GT: dessert"],
+        ["小笼包","xiǎo lóng bāo","GT: Dumplings"],
+        ["拉","lā","GT: Pull"],
+        ["笼","lóng","GT: cage"],
+        ["粥","yù","GT: Gruel"],
+        ["油条","yóu tiáo","GT: Fritters"],
+        ["豆浆","dòu jiāng","GT: Milk"],
+        ["豆","dòu","GT: beans"],
+        ["浆","jiāng","GT: Pulp"],
+        ["火锅","huǒ guō","GT: Hot Pot"],
+        ["包子","bāo zi","GT: bun"],
+        ["炒饭","chǎo fàn","GT: Fried rice"],
+        ["锅","guō","GT: pot"],
+        ["炒","chǎo","GT: fry"]
+      ]},
+      {name:"Time 4", words:[
+        ["夏","xià","GT: summer"],
+        ["冬","dōng","GT: winter"],
+        ["秋","qiū","GT: autumn"],
+        ["季","jì","GT: season"],
+        ["澳","ào","GT: Australia"],
+        ["亚","yà","GT: Asia"],
+        ["季节","jì jié","GT: season"],
+        ["澳大利亚","ào dà lì yà","GT: Australia"],
+        ["越来越","yuè lái yuè","GT: More"],
+        ["前天","qián tiān","GT: The day before yesterday"],
+        ["后天","hòu tiān","GT: acquired"],
+        ["堵车","dǔ chē","GT: Traffic jam"],
+        ["大概","dà gài","GT: probably"],
+        ["准时","zhǔn shí","GT: on time"],
+        ["刚","gāng","GT: just"],
+        ["堵","dǔ","GT: Blocking"],
+        ["概","gài","GT: General"]
+      ]},
+      {name:"Location 5", words:[
+        ["城","chéng","GT: city"],
+        ["附","fù","GT: Attached"],
+        ["园","yuán","GT: garden"],
+        ["城市","chéng shì","GT: city"],
+        ["附近","fù jìn","GT: nearby"],
+        ["公园","gōng yuán","GT: park"],
+        ["图","tú","GT: Map"],
+        ["方","fāng","GT: How to"],
+        ["中间","zhōng jiān","GT: intermediate"],
+        ["图书馆","tú shū guǎn","GT: library"],
+        ["地方","dì fāng","GT: local"],
+        ["上面","shàng miàn","GT: On"],
+        ["下面","xià miàn","GT: below"],
+        ["咖啡馆","kā fēi guǎn","GT: coffee shop"]
+      ]},
+      {name:"Shopping 4", words:[
+        ["折","shé","GT: fold"],
+        ["角","jué","GT: angle"],
+        ["花","huā","GT: flower"],
+        ["打折","dǎ zhé","GT: Discount"],
+        ["旧","jiù","GT: old"],
+        ["皮","pí","GT: skin"],
+        ["换","huàn","GT: change"],
+        ["皮鞋","pí xié","GT: leather shoes"],
+        ["经过","jīng guò","GT: through"],
+        ["退货","tuì huò","GT: Returns"],
+        ["退款","tuì kuǎn","GT: Refund"],
+        ["退","tuì","GT: Retreat"],
+        ["货","huò","GT: goods"],
+        ["款","kuǎn","GT: paragraph"],
+        ["袋子","dài zi","GT: bag"]
+      ]},
+      {name:"Daily Routine 2", words:[
+        ["惯","guàn","GT: used"],
+        ["刷","shuā","GT: brush"],
+        ["习惯","xí guàn","GT: habit"],
+        ["刷牙","shuā yá","GT: Brush teeth"],
+        ["马上","mǎ shàng","GT: immediately"],
+        ["以后","yǐ hòu","GT: after"],
+        ["澡","zǎo","GT: bath"],
+        ["总","zǒng","GT: total"],
+        ["洗澡","xǐ zǎo","GT: Bathe"],
+        ["一边","yī biān","GT: One side"],
+        ["总是","zǒng shì","GT: always"],
+        ["讲","jiǎng","GT: speak"],
+        ["故","gù","GT: Therefore"],
+        ["故事","gù shì","GT: story"],
+        ["以前","yǐ qián","GT: before"],
+        ["做梦","zuò mèng","GT: dream"],
+        ["梦","mèng","GT: dream"]
+      ]},
+      {name:"Food 3", words:[
+        ["除","chú","GT: except"],
+        ["其","qí","GT: its"],
+        ["饺","jiǎo","GT: dumpling"],
+        ["北方","běi fāng","GT: north"],
+        ["除了","chú le","GT: apart from"],
+        ["其他","qí tā","GT: other"],
+        ["饺子","jiǎo zi","GT: Dumplings"],
+        ["辣","là","GT: hot"],
+        ["极","jí","GT: pole"],
+        ["苦","kǔ","GT: bitter"],
+        ["盐","yán","GT: salt"],
+        ["咸","xián","GT: salty"],
+        ["南","nán","GT: south"],
+        ["南方","nán fāng","GT: south"],
+        ["难吃","nán chī","GT: Unpalatable"]
+      ]},
+      {name:"People 3", words:[
+        ["级","jí","GT: level"],
+        ["个子","gè zi","GT: Stature"],
+        ["年级","nián jí","GT: grade"],
+        ["小学","xiǎo xué","GT: primary school"],
+        ["初中","chū zhōng","GT: junior high school"],
+        ["初","chū","GT: First"],
+        ["较","jiào","GT: Relatively"],
+        ["年轻","nián qīng","GT: young"],
+        ["比较","bǐ jiào","GT: Compare"],
+        ["眼镜","yǎn jìng","GT: glasses"],
+        ["戴","dài","GT: wore"],
+        ["镜","jìng","GT: mirror"]
+      ]},
+      {name:"Location 6", words:[
+        ["先","xiān","GT: first"],
+        ["然后","rán hòu","GT: then"],
+        ["西边","xī biān","GT: The west"],
+        ["东边","dōng bian","GT: The east"],
+        ["北边","běi biān","GT: North"],
+        ["一直","yī zhí","GT: Up"],
+        ["最后","zuì hòu","GT: At last"],
+        ["南边","nán bian","GT: South"],
+        ["直","zhí","GT: straight"],
+        ["迷路","mí lù","GT: get lost"],
+        ["地址","dì zhǐ","GT: address"],
+        ["周围","zhōu wéi","GT: around"],
+        ["迷","mí","GT: fan"],
+        ["址","zhǐ","GT: site"],
+        ["围","wéi","GT: Enclose"]
+      ]},
+      {name:"Daily Routine 3", words:[
+        ["般","bān","GT: Sort"],
+        ["聊","liáo","GT: chat"],
+        ["聊天","liáo tiān","GT: to chat with"],
+        ["一般","yī bān","GT: general"],
+        ["见面","jiàn miàn","GT: meet"],
+        ["自己","zì jǐ","GT: Own"],
+        ["一个人","yī gè rén","GT: A person"],
+        ["自","zì","GT: from"],
+        ["己","jǐ","GT: already"]
+      ]},
+      {name:"Travel 2", words:[
+        ["证","zhèng","GT: certificate"],
+        ["签","qiān","GT: sign"],
+        ["护","hù","GT: Protect"],
+        ["护照","hù zhào","GT: passport"],
+        ["签证","qiān zhèng","GT: visa"],
+        ["发现","fā xiàn","GT: Find"],
+        ["起飞","qǐ fēi","GT: take off"],
+        ["离开","lí kāi","GT: go away"],
+        ["检查","jiǎn chá","GT: an examination"],
+        ["行李","xíng li","GT: Baggage"],
+        ["安全","ān quán","GT: Safety"],
+        ["检","jiǎn","GT: Check"],
+        ["查","zhā","GT: check"],
+        ["几乎","jī hū","GT: almost"],
+        ["忘记","wàng jì","GT: forget"],
+        ["海关","hǎi guān","GT: Customs"],
+        ["忘","wàng","GT: forget"],
+        ["记","jì","GT: Remember"],
+        ["乎","hū","GT: Down"]
+      ]},
+      {name:"Languages 2", words:[
+        ["言","yán","GT: Speech"],
+        ["易","yì","GT: easy"],
+        ["容","róng","GT: Allow"],
+        ["种","zhǒng","GT: Kind"],
+        ["容易","róng yì","GT: easily"],
+        ["语言","yǔ yán","GT: Language"],
+        ["更","gēng","GT: more"],
+        ["努力","nǔ lì","GT: Strive"],
+        ["汉字","hàn zì","GT: Chinese character"],
+        ["努","nǔ","GT: Strive"],
+        ["提高","tí gāo","GT: improve"],
+        ["水平","shuǐ píng","GT: Level"],
+        ["后来","hòu lái","GT: later"],
+        ["提","tí","GT: mention"],
+        ["平","píng","GT: level"]
+      ]},
+    ]
+  },
+  {
+    title:"Section 6",
+    theme:"Personality and Feelings, School 2, Future",
+    phase:"24 lessons",
+    days:[
+      {name:"Personality and Feelings", words:[
+        ["看起来","kàn qǐ lai","GT: Looks"],
+        ["奇怪","qí guài","GT: strange"],
+        ["生气","shēng qì","GT: pissed off"],
+        ["紧张","jǐn zhāng","GT: tension"],
+        ["奇","jī","GT: odd"],
+        ["怪","guài","GT: strange"],
+        ["紧","jǐn","GT: tight"],
+        ["难过","nán guò","GT: Sorry"],
+        ["哭","kū","GT: cry"],
+        ["可怕","kě pà","GT: terrible"],
+        ["热情","rè qíng","GT: enthusiasm"],
+        ["关心","guān xīn","GT: care"],
+        ["经常","jīng cháng","GT: often"],
+        ["遇到","yù dào","GT: Experience"],
+        ["好笑","hǎo xiào","GT: funny"],
+        ["遇","yù","GT: Encounter"]
+      ]},
+      {name:"School 2", words:[
+        ["求","qiú","GT: begging"],
+        ["校长","xiào zhǎng","GT: principal"],
+        ["要求","yāo qiú","GT: Claim"],
+        ["食堂","shí táng","GT: Cafeteria"],
+        ["食","shí","GT: food"],
+        ["堂","táng","GT: Hall"],
+        ["必须","bì xū","GT: have to"],
+        ["完成","wán chéng","GT: carry out"],
+        ["作业","zuò yè","GT: operation"],
+        ["高中","gāo zhōng","GT: Senior middle school"],
+        ["必","bì","GT: must"],
+        ["成","chéng","GT: to make"],
+        ["须","xū","GT: must"],
+        ["业","yè","GT: industry"],
+        ["向","xiàng","GT: to"],
+        ["借","jiè","GT: borrow"],
+        ["笔记","bǐ jì","GT: notes"],
+        ["铅笔","qiān bǐ","GT: pencil"],
+        ["铅","qiān","GT: lead"],
+        ["清楚","qīng chu","GT: clear"],
+        ["黑板","hēi bǎn","GT: blackboard"],
+        ["笔记本","bǐ jì běn","GT: notebook"],
+        ["清","qīng","GT: clear"],
+        ["楚","chǔ","GT: Chu"],
+        ["板","bǎn","GT: board"],
+        ["体育馆","tǐ yù guǎn","GT: stadium"]
+      ]},
+      {name:"Future", words:[
+        ["化","huà","GT: Of"],
+        ["算","suàn","GT: Count"],
+        ["搬","bān","GT: move"],
+        ["变","biàn","GT: change"],
+        ["打算","dǎ suàn","GT: intend"],
+        ["变化","biàn huà","GT: Variety"],
+        ["机会","jī huì","GT: opportunity"],
+        ["留学","liú xué","GT: Study abroad"],
+        ["国家","guó jiā","GT: country"],
+        ["选择","xuǎn zé","GT: select"],
+        ["选","xuǎn","GT: selected"],
+        ["择","zé","GT: Choose"],
+        ["结婚","jié hūn","GT: marry"],
+        ["愿意","yuàn yì","GT: willing"],
+        ["认真","rèn zhēn","GT: serious"],
+        ["结","jiē","GT: Knot"],
+        ["愿","yuàn","GT: willing"],
+        ["婚","hūn","GT: marriage"],
+        ["当然","dāng rán","GT: of course"],
+        ["放心","fàng xīn","GT: rest assured"],
+        ["害怕","hài pà","GT: Afraid"],
+        ["当","dāng","GT: when"],
+        ["害","hài","GT: harm"],
+        ["怕","pà","GT: afraid"],
+        ["分手","fēn shǒu","GT: Breaking up"]
+      ]},
+      {name:"Environment", words:[
+        ["境","jìng","GT: territory"],
+        ["环","huán","GT: ring"],
+        ["层","céng","GT: Floor"],
+        ["方便","fāng biàn","GT: Convenience"],
+        ["环境","huán jìng","GT: surroundings"],
+        ["草","cǎo","GT: grass"],
+        ["太阳","tài yang","GT: sun"],
+        ["星星","xīng xing","GT: star"],
+        ["阳","yáng","GT: Positive"],
+        ["安静","ān jìng","GT: be quiet"],
+        ["楼","lóu","GT: floor"],
+        ["静","jìng","GT: Quiet"],
+        ["声音","shēng yīn","GT: sound"],
+        ["影响","yǐng xiǎng","GT: influences"],
+        ["邻居","lín jū","GT: neighbor"],
+        ["声","shēng","GT: sound"],
+        ["邻","lín","GT: adjacent"],
+        ["响","xiǎng","GT: ring"],
+        ["居","jū","GT: House"],
+        ["垃圾","lā jī","GT: Rubbish"],
+        ["桶","tǒng","GT: barrel"],
+        ["丢","diū","GT: throw"],
+        ["脏","zàng","GT: dirty"],
+        ["垃","lā","GT: garbage"],
+        ["圾","jī","GT: Rubbish"]
+      ]},
+      {name:"Work", words:[
+        ["先生","xiān sheng","GT: Mr"],
+        ["小姐","xiǎo jie","GT: Young lady"],
+        ["经理","jīng lǐ","GT: manager"],
+        ["同事","tóng shì","GT: colleague"],
+        ["突然","tū rán","GT: suddenly"],
+        ["重要","zhòng yào","GT: important"],
+        ["会议","huì yì","GT: meeting"],
+        ["突","tū","GT: Sudden"],
+        ["重","chóng","GT: weight"],
+        ["议","yì","GT: Discuss"],
+        ["解决","jiě jué","GT: solve"],
+        ["办法","bàn fǎ","GT: Method"],
+        ["相信","xiāng xìn","GT: Believe"],
+        ["决","jué","GT: Decide"],
+        ["解","xiè","GT: solution"]
+      ]},
+      {name:"Culture", words:[
+        ["界","jiè","GT: boundary"],
+        ["河","hé","GT: River"],
+        ["世","shì","GT: world"],
+        ["黄河","huáng hé","GT: Yellow River"],
+        ["动物","dòng wù","GT: animal"],
+        ["有名","yǒu míng","GT: Famous"],
+        ["世界","shì jiè","GT: world"],
+        ["长江","cháng jiāng","GT: Yangtze"],
+        ["江","jiāng","GT: River"],
+        ["多么","duō me","GT: how"],
+        ["熊猫","xióng māo","GT: panda"],
+        ["西安","xī ān","GT: Xi'an"],
+        ["啊","ā","GT: what"],
+        ["熊","xióng","GT: Bear"],
+        ["长城","cháng chéng","GT: Great Wall"],
+        ["故宫","gù gōng","GT: Forbidden City"],
+        ["宫","gōng","GT: palace"]
+      ]},
+      {name:"Hobbies 3", words:[
+        ["山","shān","GT: mountain"],
+        ["者","zhě","GT: Person"],
+        ["爬","pá","GT: climb"],
+        ["或","huò","GT: or"],
+        ["自行车","zì xíng chē","GT: bicycle"],
+        ["或者","huò zhě","GT: or"],
+        ["爬山","pá shān","GT: Climb"],
+        ["功夫","gōng fu","GT: effort"],
+        ["功","gōng","GT: Gong"],
+        ["文化","wén huà","GT: culture"],
+        ["历史","lì shǐ","GT: history"],
+        ["兴趣","xìng qù","GT: interest"],
+        ["感兴趣","gǎn xìng qù","GT: Interested"],
+        ["历","lì","GT: calendar"],
+        ["趣","qù","GT: interest"],
+        ["史","shǐ","GT: history"],
+        ["为了","wèi le","GT: in order to"],
+        ["特别","tè bié","GT: particular"],
+        ["了解","liǎo jiě","GT: To understanding"],
+        ["麻将","má jiàng","GT: Mahjong"],
+        ["特","tè","GT: special"],
+        ["麻","má","GT: hemp"],
+        ["将","jiāng","GT: will"]
+      ]},
+      {name:"Health 3", words:[
+        ["顾","gù","GT: Attend"],
+        ["死","sǐ","GT: dead"],
+        ["闷","mēn","GT: stuffy"],
+        ["腿","tuǐ","GT: leg"],
+        ["照顾","zhào gu","GT: Look after"],
+        ["公斤","gōng jīn","GT: kg"],
+        ["着急","zháo jí","GT: Worry"],
+        ["瘦","shòu","GT: thin"],
+        ["斤","jīn","GT: jin"],
+        ["急","jí","GT: anxious"],
+        ["咳嗽","ké sou","GT: cough"],
+        ["抽烟","chōu yān","GT: smokes"],
+        ["咳","hāi","GT: cough"],
+        ["嗽","sòu","GT: cough"],
+        ["抽","chōu","GT: Draw"],
+        ["烟","yān","GT: smoke"]
+      ]},
+      {name:"Travel 3", words:[
+        ["际","jì","GT: The occasion"],
+        ["柜","jǔ","GT: cabinet"],
+        ["转","zhuǎi","GT: turn"],
+        ["转机","zhuǎn jī","GT: Connection"],
+        ["柜台","guì tái","GT: counter"],
+        ["国际","guó jì","GT: International"],
+        ["换钱","huàn qián","GT: Change money"],
+        ["银行","yín háng","GT: bank"],
+        ["充电","chōng diàn","GT: Charging"],
+        ["国内","guó nèi","GT: domestic"],
+        ["银","yín","GT: silver"],
+        ["充","chōng","GT: Charge"],
+        ["内","nèi","GT: Inside"],
+        ["充值","chōng zhí","GT: Recharge"],
+        ["漫游","màn yóu","GT: roaming"],
+        ["电话卡","diàn huà kǎ","GT: phone card"],
+        ["值","zhí","GT: value"],
+        ["订房","dìng fáng","GT: Booking"],
+        ["退房","tuì fáng","GT: check out"],
+        ["取消","qǔ xiāo","GT: cancel"],
+        ["导游","dǎo yóu","GT: Tourist guide"],
+        ["取","qǔ","GT: take"],
+        ["导","dǎo","GT: guide"],
+        ["消","xiāo","GT: Eliminate"]
+      ]},
+      {name:"Languages 3", words:[
+        ["答","dā","GT: answer"],
+        ["句","jù","GT: sentence"],
+        ["简","jiǎn","GT: simple"],
+        ["简单","jiǎn dān","GT: simple"],
+        ["句子","jù zi","GT: sentence"],
+        ["回答","huí dá","GT: Reply"],
+        ["词典","cí diǎn","GT: dictionary"],
+        ["应用","yìng yòng","GT: application"],
+        ["语法","yǔ fǎ","GT: grammar"],
+        ["流利","liú lì","GT: fluent"],
+        ["词","cí","GT: word"],
+        ["流","liú","GT: flow"],
+        ["典","diǎn","GT: Code"],
+        ["下载","xià zǎi","GT: download"],
+        ["多邻国","duō lín guó","GT: Duolingo"],
+        ["翻译","fān yì","GT: translation"],
+        ["翻","fān","GT: turn"],
+        ["载","zǎi","GT: Load"],
+        ["译","yì","GT: Translate"]
+      ]},
+      {name:"House", words:[
+        ["把","bǎ","GT: The"],
+        ["灯","dēng","GT: light"],
+        ["空调","kōng tiáo","GT: air conditioning"],
+        ["画","huà","GT: painting"],
+        ["厨房","chú fáng","GT: kitchen"],
+        ["客厅","kè tīng","GT: living room"],
+        ["厨","chú","GT: Kitchen"],
+        ["厅","tīng","GT: hall"],
+        ["客人","kè rén","GT: The guests"],
+        ["打扫","dǎ sǎo","GT: clean"],
+        ["干净","gān jìng","GT: clean"],
+        ["扫","sǎo","GT: sweep"],
+        ["净","jìng","GT: net"],
+        ["电梯","diàn tī","GT: elevator"],
+        ["坏","huài","GT: Bad"],
+        ["被","bèi","GT: Is"],
+        ["厕所","cè suǒ","GT: WC"],
+        ["厕","cè","GT: toilet"],
+        ["梯","tī","GT: ladder"]
+      ]},
+      {name:"Exam", words:[
+        ["寒","hán","GT: cold"],
+        ["暑","shǔ","GT: Heat"],
+        ["复","fù","GT: complex"],
+        ["记得","jì de","GT: remember"],
+        ["复习","fù xí","GT: review"],
+        ["数学","shù xué","GT: mathematics"],
+        ["放假","fàng jià","GT: holiday"],
+        ["暑假","shǔ jià","GT: summer vacation"],
+        ["寒假","hán jià","GT: winter vacation"],
+        ["终于","zhōng yú","GT: at last"],
+        ["结束","jié shù","GT: End"],
+        ["放松","fàng sōng","GT: Relax"],
+        ["大学","dà xué","GT: the University"],
+        ["终","zhōng","GT: end"],
+        ["于","yú","GT: to"],
+        ["束","shù","GT: bundle"],
+        ["成绩","chéng jì","GT: Achievement"],
+        ["担心","dān xīn","GT: worry"],
+        ["专业","zhuān yè","GT: profession"],
+        ["担","dān","GT: Dan"],
+        ["专","zhuān","GT: Special"],
+        ["绩","jì","GT: Merit"]
+      ]},
+      {name:"Travel 4", words:[
+        ["景","jǐng","GT: view"],
+        ["街","jiē","GT: street"],
+        ["地图","dì tú","GT: map"],
+        ["街道","jiē dào","GT: street"],
+        ["红绿灯","hóng lǜ dēng","GT: traffic light"],
+        ["风景","fēng jǐng","GT: landscape"],
+        ["司机","sī jī","GT: driver"],
+        ["接","jiē","GT: Meet"],
+        ["免费","miǎn fèi","GT: free"],
+        ["打车","dǎ chē","GT: A taxi"],
+        ["观光","guān guāng","GT: go sightseeing"],
+        ["免","miǎn","GT: Avoid"],
+        ["观","guàn","GT: Watch"],
+        ["光","guāng","GT: Light"],
+        ["小心","xiǎo xīn","GT: Be careful"],
+        ["时差","shí chā","GT: jet lag"],
+        ["马路","mǎ lù","GT: road"],
+        ["参观","cān guān","GT: Visit"],
+        ["博物馆","bó wù guǎn","GT: museum"],
+        ["博","bó","GT: Rich"],
+        ["安排","ān pái","GT: arrangement"],
+        ["活动","huó dòng","GT: activity"],
+        ["表演","biǎo yǎn","GT: Performance"],
+        ["海边","hǎi biān","GT: seaside"],
+        ["活","huó","GT: live"],
+        ["演","yǎn","GT: play"]
+      ]},
+      {name:"Communication 2", words:[
+        ["邮","yóu","GT: mail"],
+        ["刚才","gāng cái","GT: Just now"],
+        ["电子邮件","diàn zǐ yóu jiàn","GT: e-mail"],
+        ["主要","zhǔ yào","GT: main"],
+        ["短信","duǎn xìn","GT: SMS"],
+        ["关于","guān yú","GT: on"],
+        ["主","zhǔ","GT: the Lord"],
+        ["登录","dēng lù","GT: log in"],
+        ["密码","mì mǎ","GT: password"],
+        ["信号","xìn hào","GT: signal"],
+        ["登","dēng","GT: Ascend"],
+        ["密","mì","GT: dense"],
+        ["录","lù","GT: record"],
+        ["段","duàn","GT: segment"],
+        ["其实","qí shí","GT: in fact"],
+        ["过去","guò qù","GT: past"],
+        ["谈","tán","GT: talk"],
+        ["实","shí","GT: real"]
+      ]},
+      {name:"Work 2", words:[
+        ["同意","tóng yì","GT: agree"],
+        ["决定","jué dìng","GT: Decide"],
+        ["根据","gēn jù","GT: according to"],
+        ["升职","shēng zhí","GT: Promotion"],
+        ["根","gēn","GT: root"],
+        ["据","jū","GT: according to"],
+        ["升","shēng","GT: Rise"],
+        ["职","zhí","GT: Office"],
+        ["满意","mǎn yì","GT: satisfaction"],
+        ["认为","rèn wéi","GT: think"],
+        ["出差","chū chāi","GT: On a business trip"],
+        ["表现","biǎo xiàn","GT: which performed"],
+        ["满","mǎn","GT: full"],
+        ["老板","lǎo bǎn","GT: boss"],
+        ["麻烦","má fan","GT: trouble"],
+        ["开会","kāi huì","GT: Meetings"],
+        ["面试","miàn shì","GT: Interview"],
+        ["烦","fán","GT: bother"]
+      ]},
+      {name:"Festivals", words:[
+        ["饼","bǐng","GT: cake"],
+        ["月亮","yuè liang","GT: moon"],
+        ["月饼","yuè bǐng","GT: moon cake"],
+        ["中秋节","zhōng qiū jié","GT: Mid-Autumn Festival"],
+        ["圆","yuán","GT: circle"],
+        ["恭喜","gōng xǐ","GT: Congratulation"],
+        ["红包","hóng bāo","GT: Red envelope"],
+        ["汤圆","tāng yuán","GT: Dumpling"],
+        ["聚会","jù huì","GT: get together"],
+        ["发财","fā cái","GT: Make a fortune"],
+        ["恭","gōng","GT: Respectful"],
+        ["聚","jù","GT: Gather"],
+        ["财","cái","GT: fiscal"],
+        ["端午节","duān wǔ jié","GT: Dragon boat festival"],
+        ["粽子","zòng zi","GT: Zongzi"],
+        ["划","huá","GT: Draw"],
+        ["龙舟","lóng zhōu","GT: Dragon Boat"],
+        ["端","duān","GT: end"],
+        ["粽","zòng","GT: Dumplings"],
+        ["龙","lóng","GT: Dragon"],
+        ["舟","zhōu","GT: boat"]
+      ]},
+      {name:"Gourmet 2", words:[
+        ["珠","zhū","GT: Pearl"],
+        ["汤","tāng","GT: soup"],
+        ["酸","suān","GT: acid"],
+        ["珍","zhēn","GT: Treasure"],
+        ["珍珠奶茶","zhēn zhū nǎi chá","GT: Pearl milk tea"],
+        ["酸辣汤","suān là tāng","GT: Hot and sour soup"],
+        ["北京烤鸭","běi jīng kǎo yā","GT: Peking duck"],
+        ["春卷","chūn juǎn","GT: Spring Rolls"],
+        ["豆花","dòu huā","GT: Curd"],
+        ["烤","kǎo","GT: grilled"],
+        ["鸭","yā","GT: duck"],
+        ["卷","juǎn","GT: volume"],
+        ["宫保鸡丁","gōng bǎo jī dīng","GT: Kung Pao Chicken"],
+        ["卤肉饭","lǔ ròu fàn","GT: Braised pork on rice"],
+        ["馒头","mán tou","GT: steamed bread"],
+        ["保","bǎo","GT: Insurance"],
+        ["卤","lǔ","GT: halogen"],
+        ["馒","mán","GT: steamed bread"],
+        ["丁","dīng","GT: Ding"]
+      ]},
+      {name:"Internet Slang", words:[
+        ["豪","háo","GT: Howe"],
+        ["宅","zhái","GT: House"],
+        ["土","tǔ","GT: soil"],
+        ["土豪","tǔ háo","GT: Local tycoon"],
+        ["吃货","chī huò","GT: Food goods"],
+        ["宅男","zhái nán","GT: Takuotoko"],
+        ["菜鸟","cài niǎo","GT: Rookie"],
+        ["美图","měi tú","Chinese photography editing app"],
+        ["萌","méng","GT: Sprout"],
+        ["自拍","zì pāi","GT: Selfie"],
+        ["囧","jiǒng","GT: Oops"],
+        ["美眉","měi méi","GT: Meimei"],
+        ["高富帅","gāo fù shuài","GT: Tall, rich and handsome"],
+        ["眉","méi","GT: eyebrow"],
+        ["富","fù","GT: rich"],
+        ["微博","wēi bó","GT: BiHiroshi"],
+        ["微信","wēi xìn","GT: Micro letter"],
+        ["朋友圈","péng you quān","GT: Circle of friends"],
+        ["微","wēi","GT: micro-"],
+        ["圈","juān","GT: ring"],
+        ["关注","guān zhù","GT: attention"],
+        ["赞","zàn","GT: awesome"],
+        ["转发","zhuǎn fā","GT: Forwarded"],
+        ["好友","hǎo yǒu","GT: Friends"],
+        ["粉丝","fěn sī","GT: Fans"],
+        ["分享","fēn xiǎng","GT: share it"],
+        ["评论","píng lùn","GT: comment"],
+        ["粉","fěn","GT: powder"],
+        ["丝","sī","GT: wire"],
+        ["享","xiǎng","GT: enjoy"],
+        ["评","píng","GT: Review"],
+        ["论","lún","GT: s"]
+      ]},
+      {name:"Business 1", words:[
+        ["销","xiāo","GT: pin"],
+        ["收据","shōu jù","GT: receipt"],
+        ["报销","bào xiāo","GT: Submit an expense account"],
+        ["费用","fèi yòng","GT: cost"],
+        ["尽快","jǐn kuài","GT: ASAP"],
+        ["回复","huí fù","GT: Reply"],
+        ["报告","bào gào","GT: report"],
+        ["协议","xié yì","GT: protocol"],
+        ["尽","jǐn","GT: Exhausted"],
+        ["协","xié","GT: Assist"],
+        ["合同","hé tong","GT: contract"],
+        ["项目","xiàng mù","GT: project"],
+        ["签名","qiān míng","GT: signature"],
+        ["汇报","huì bào","GT: report"],
+        ["合","gě","GT: Close"],
+        ["项","xiàng","GT: item"],
+        ["汇","huì","GT: exchange"],
+        ["广告","guǎng gào","GT: ad"],
+        ["预算","yù suàn","GT: budget"],
+        ["资本","zī běn","GT: capital"],
+        ["低","dī","GT: low"],
+        ["广","guǎng","GT: wide"],
+        ["资","zī","GT: Capital"]
+      ]},
+      {name:"Business 2", words:[
+        ["险","xiǎn","GT: risk"],
+        ["投","tóu","GT: cast"],
+        ["保险","bǎo xiǎn","GT: Insurance"],
+        ["风险","fēng xiǎn","GT: risk"],
+        ["投资","tóu zī","GT: investment"],
+        ["律师","lǜ shī","GT: lawyer"],
+        ["版权","bǎn quán","GT: copyright"],
+        ["咨询","zī xún","GT: advisory"],
+        ["律","lǜ","GT: law"],
+        ["版","bǎn","GT: Version"],
+        ["咨","zī","GT: Advisory"],
+        ["权","quán","GT: right"],
+        ["询","xún","GT: Query"],
+        ["保持","bǎo chí","GT: maintain"],
+        ["联系","lián xì","GT: contact"],
+        ["联","lián","GT: United"],
+        ["持","chí","GT: hold"],
+        ["合作","hé zuò","GT: Cooperation"],
+        ["愉快","yú kuài","GT: happy"],
+        ["辛苦","xīn kǔ","GT: hard"],
+        ["感谢","gǎn xiè","GT: thank"],
+        ["愉","yú","GT: Discovery"],
+        ["辛","xīn","GT: Xin"]
+      ]},
+      {name:"Emergency", words:[
+        ["伤","shāng","GT: hurt"],
+        ["受","shòu","GT: Suffer"],
+        ["救","jiù","GT: save"],
+        ["警","jǐng","GT: police"],
+        ["报警","bào jǐng","GT: Call the police"],
+        ["救护车","jiù hù chē","GT: ambulance"],
+        ["受伤","shòu shāng","GT: Injured"],
+        ["救命","jiù mìng","GT: Help"],
+        ["发生","fā shēng","GT: occur"],
+        ["意外","yì wài","GT: accident"],
+        ["严重","yán zhòng","GT: serious"],
+        ["严","yán","GT: strict"],
+        ["命","mìng","GT: Life"],
+        ["偷","tōu","GT: steal"],
+        ["警察","jǐng chá","GT: Policemen"],
+        ["察","chá","GT: Observe"]
+      ]},
+      {name:"Work 3", words:[
+        ["奖","jiǎng","GT: prize"],
+        ["工资","gōng zī","GT: wage"],
+        ["加班","jiā bān","GT: Overtime"],
+        ["奖金","jiǎng jīn","GT: bonus"],
+        ["生意","shēng yì","GT: business"],
+        ["压力","yā lì","GT: pressure"],
+        ["责任","zé rèn","GT: responsibility"],
+        ["商量","shāng liang","GT: discuss"],
+        ["意见","yì jiàn","GT: opinion"],
+        ["压","yā","GT: Press"],
+        ["责","zé","GT: responsibility"],
+        ["任","rén","GT: Any"],
+        ["误会","wù huì","GT: misunderstanding"],
+        ["抱歉","bào qiàn","GT: Sorry"],
+        ["原谅","yuán liàng","GT: forgive"],
+        ["误","wù","GT: error"],
+        ["抱","bào","GT: hold"],
+        ["原","yuán","GT: original"],
+        ["歉","qiàn","GT: apologize"],
+        ["谅","liàng","GT: Forgive"]
+      ]},
+      {name:"Weather 2", words:[
+        ["干燥","gān zào","GT: dry"],
+        ["暖和","nuǎn huo","GT: warm"],
+        ["凉快","liáng kuai","GT: Cool off"],
+        ["燥","zào","GT: dry"],
+        ["暖","nuǎn","GT: warm"],
+        ["凉","liáng","GT: cool"],
+        ["温度","wēn dù","GT: temperature"],
+        ["大约","dà yuē","GT: about"],
+        ["温","wēn","GT: temperature"]
+      ]},
+      {name:"Duo", words:[
+        ["鹰","yīng","GT: eagle"],
+        ["羽","yǔ","GT: feather"],
+        ["橙","chéng","GT: Orange"],
+        ["猫头鹰","māo tóu yīng","GT: owl"],
+        ["羽毛","yǔ máo","GT: feather"],
+        ["多儿","duō er","name of a character owl from the app Duolingo"],
+        ["鼓励","gǔ lì","GT: encourage"],
+        ["提醒","tí xǐng","GT: remind"],
+        ["懒","lǎn","GT: lazy"],
+        ["放弃","fàng qì","GT: give up"],
+        ["鼓","gǔ","GT: drum"],
+        ["励","lì","GT: Encourage"],
+        ["醒","xǐng","GT: wake"],
+        ["弃","qì","GT: abandoned"]
+      ]},
+    ]
+  },
+];
+
 // ============ APP ============
 const APP = {
-  state:{userName:'',userInitial:'学',currentWeek:0,currentDay:0,currentCard:0,flipped:false,progress:{},streak:0,lastDate:null,theme:'auto',audioOn:true,currentView:'home',studySeconds:0},
+  state:{userName:'',userInitial:'学',currentTrack:'hsk',currentWeek:0,currentDay:0,currentCard:0,flipped:false,progress:{},streak:0,lastDate:null,theme:'auto',palette:'jade',audioOn:true,currentView:'home',studySeconds:0},
   speech:null,
   touch:{startX:0,startY:0},
+
+  // ============ TRACK HELPERS ============
+  // Two independent tracks share one flashcard engine. HSK keeps legacy progress
+  // keys ("w_d_c"); Duolingo keys are prefixed "D" so the two never collide and
+  // existing HSK progress in localStorage is preserved untouched.
+  DATA(t){return (t||this.state.currentTrack)==='duo'?DUOLINGO:WEEKS;},
+  trackPfx(t){return (t||this.state.currentTrack)==='duo'?'D':'';},
+  pk(w,d,c,t){return this.trackPfx(t)+w+'_'+d+'_'+c;},
+  unitWord(){return this.state.currentTrack==='duo'?'Section':'Week';},
+  subUnitWord(){return this.state.currentTrack==='duo'?'Lesson':'Day';},
+  backFromStudy(){this.go(this.state.currentTrack==='duo'?'duo':'home');},
 
   init(){
     this.load();
     this.detectTheme();
+    this.applyPalette();
     this.bindKeyboard();
     this.bindSwipe();
     this.renderRoadmap();
@@ -2077,6 +3884,39 @@ const APP = {
     document.getElementById('audioToggle').textContent=this.state.audioOn?'🔊':'🔇';
     this.save();
     this.toast(this.state.audioOn?'Audio on':'Audio off');
+  },
+
+  // ============ COLOR THEME (palette picker) ============
+  PALETTES:[
+    {id:'jade',name:'Jade',dot:'#4a7c59'},
+    {id:'duo',name:'Owl Green',dot:'#58a700'},
+    {id:'ocean',name:'Ocean',dot:'#2f6db0'},
+    {id:'teal',name:'Teal',dot:'#2a9d8f'},
+    {id:'grape',name:'Grape',dot:'#7a5c8f'},
+    {id:'sunset',name:'Sunset',dot:'#c9683a'},
+    {id:'rose',name:'Rose',dot:'#bb3f87'}
+  ],
+  applyPalette(){
+    const p=this.state.palette||'jade';
+    document.documentElement.setAttribute('data-palette',p);
+  },
+  openThemePicker(){
+    const grid=document.getElementById('paletteGrid');
+    grid.innerHTML=this.PALETTES.map(p=>`
+      <button class="palette-swatch ${p.id===(this.state.palette||'jade')?'active':''}" data-pal="${p.id}" onclick="APP.setPalette('${p.id}')">
+        <span class="palette-dot" style="background:${p.dot}"></span>
+        <span class="palette-name">${p.name}</span>
+      </button>`).join('');
+    document.getElementById('themeModal').classList.add('open');
+  },
+  closeThemePicker(){document.getElementById('themeModal').classList.remove('open');},
+  setPalette(id){
+    this.state.palette=id;
+    this.applyPalette();
+    this.save();
+    document.querySelectorAll('#paletteGrid .palette-swatch').forEach(b=>b.classList.toggle('active',b.dataset.pal===id));
+    const p=this.PALETTES.find(x=>x.id===id);
+    this.toast(`Theme · ${p?p.name:id}`);
   },
 
   // ============ NAME ============
@@ -2152,6 +3992,7 @@ const APP = {
   // ============ NAV ============
   go(view){
     document.getElementById('homeView').hidden=view!=='home';
+    document.getElementById('duoView').hidden=view!=='duo';
     document.getElementById('studyView').hidden=view!=='study';
     document.getElementById('grammarView').hidden=view!=='grammar';
     document.getElementById('progressView').hidden=view!=='progress';
@@ -2161,6 +4002,7 @@ const APP = {
     if(view==='progress')this.renderProgress();
     if(view==='leaderboard')this.renderLeaderboard();
     if(view==='home'){this.renderRoadmap();this.renderWeeks();this.updateHomeStats();this.updateTodayTask();}
+    if(view==='duo'){this.renderDuoSections();this.updateDuoStats();this.updateDuoTask();}
     if(view==='study')this.renderStudyView(); // direct call — no recursion
     window.scrollTo({top:0,behavior:'smooth'});
   },
@@ -2168,9 +4010,10 @@ const APP = {
   // Renders the current week/day in the study view. Pure render — no state changes.
   renderStudyView(){
     const wi=this.state.currentWeek;
-    const w=WEEKS[wi];
+    const w=this.DATA()[wi];
     if(!w||!w.days)return;
-    document.getElementById('weekHeading').textContent=`Week ${wi+1} · ${w.title}`;
+    const isDuo=this.state.currentTrack==='duo';
+    document.getElementById('weekHeading').textContent=isDuo?`🦉 ${w.title}`:`Week ${wi+1} · ${w.title}`;
     document.getElementById('weekSubheading').textContent=`${w.theme} · ${w.phase||''}`;
     this.renderDayTabs();
     this.hideSessionComplete();
@@ -2178,22 +4021,28 @@ const APP = {
   },
 
   continueStudy(){
-    const next=this.findNextDay();
+    const next=this.findNextDay('hsk');
     this.openWeek(next.w,next.d,next.c);
+  },
+  duoContinue(){
+    const next=this.findNextDay('duo');
+    this.openDuoSection(next.w,next.d,next.c);
   },
   // Returns where the user actually stopped: the first day that still has an
   // un-rated card, and the index of that card. A day counts as "finished" once
   // EVERY card has been rated — got_it, unsure, OR again — so review words
   // (again/unsure) no longer trap the recommendation on an earlier day.
-  findNextDay(){
+  findNextDay(track){
+    track=track||this.state.currentTrack;
+    const DATA=this.DATA(track);
     let lastValid={w:0,d:0,c:0};
-    for(let w=0;w<WEEKS.length;w++){
-      if(!WEEKS[w].days)continue;
-      for(let d=0;d<WEEKS[w].days.length;d++){
-        const day=WEEKS[w].days[d];
+    for(let w=0;w<DATA.length;w++){
+      if(!DATA[w].days)continue;
+      for(let d=0;d<DATA[w].days.length;d++){
+        const day=DATA[w].days[d];
         let touched=0,firstUntouched=-1;
         day.words.forEach((_,ci)=>{
-          if(this.state.progress[`${w}_${d}_${ci}`])touched++;
+          if(this.state.progress[this.pk(w,d,ci,track)])touched++;
           else if(firstUntouched===-1)firstUntouched=ci;
         });
         lastValid={w,d,c:0};
@@ -2206,20 +4055,20 @@ const APP = {
 
   // ============ HOME ============
   updateHomeStats(){
-    const s=this.overallStats();
+    const s=this.overallStats('hsk');
     document.getElementById('hsLearned').textContent=s.got_it;
-    const next=this.findNextDay();
+    const next=this.findNextDay('hsk');
     document.getElementById('hsWeek').textContent=next.w+1;
-    const total=this.totalCards();
+    const total=this.totalCards('hsk');
     document.getElementById('hsPct').textContent=total?Math.round(s.got_it/total*100)+'%':'0%';
   },
-  totalCards(){
+  totalCards(track){
     let total=0;
-    WEEKS.forEach(w=>{if(w.days)w.days.forEach(d=>total+=d.words.length);});
+    this.DATA(track).forEach(w=>{if(w.days)w.days.forEach(d=>total+=d.words.length);});
     return total;
   },
   updateTodayTask(){
-    const next=this.findNextDay();
+    const next=this.findNextDay('hsk');
     const w=WEEKS[next.w];
     if(!w||!w.days){document.getElementById('todayTask').hidden=true;return;}
     const day=w.days[next.d];
@@ -2230,7 +4079,7 @@ const APP = {
     }
     // If you're mid-day, show how far through you got; otherwise it's a fresh day.
     let rated=0;
-    day.words.forEach((_,ci)=>{if(this.state.progress[`${next.w}_${next.d}_${ci}`])rated++;});
+    day.words.forEach((_,ci)=>{if(this.state.progress[this.pk(next.w,next.d,ci,'hsk')])rated++;});
     document.getElementById('todayName').textContent=`Week ${next.w+1} · Day ${next.d+1} · ${day.name}`;
     document.getElementById('todaySub').textContent=rated>0
       ? `Resume — ${rated}/${day.words.length} done · ~${Math.max(1,Math.round((day.words.length-rated)*0.7))} min left`
@@ -2238,7 +4087,7 @@ const APP = {
   },
 
   renderRoadmap(){
-    const cur=this.findNextDay().w;
+    const cur=this.findNextDay('hsk').w;
     const phase=cur<4?0:cur<8?1:2;
     document.getElementById('roadmap').innerHTML=PHASES.map((p,i)=>`
       <div class="phase-card ${i===phase?'active':''}">
@@ -2252,7 +4101,7 @@ const APP = {
     const grid=document.getElementById('weeksGrid');
     grid.innerHTML=WEEKS.map((w,i)=>{
       if(!w.days){return `<div class="week-card" style="opacity:.5"><div class="week-num">WEEK ${i+1}</div><div class="week-title">${w.title||'Coming soon'}</div><div class="week-theme">${w.theme||''}</div></div>`;}
-      const s=this.weekStats(i);
+      const s=this.weekStats(i,'hsk');
       const total=w.days.reduce((a,d)=>a+d.words.length,0);
       const pct=Math.round(s.got_it/total*100);
       const complete=pct>=80?'complete':'';
@@ -2269,26 +4118,35 @@ const APP = {
     }).join('');
   },
 
-  weekStats(wi){
+  weekStats(wi,track){
+    track=track||this.state.currentTrack;
     const s={got_it:0,unsure:0,again:0};
-    const w=WEEKS[wi];
+    const w=this.DATA(track)[wi];
     if(!w.days)return s;
     w.days.forEach((d,di)=>{
       d.words.forEach((_,ci)=>{
-        const st=this.state.progress[`${wi}_${di}_${ci}`];
+        const st=this.state.progress[this.pk(wi,di,ci,track)];
         if(st&&s[st]!==undefined)s[st]++;
       });
     });
     return s;
   },
-  overallStats(){
+  // No track arg → counts BOTH tracks (used for the leaderboard total). Pass
+  // 'hsk' or 'duo' to scope. HSK keys start with a digit; Duolingo keys start "D".
+  overallStats(track){
     const s={got_it:0,unsure:0,again:0};
-    Object.values(this.state.progress).forEach(v=>{if(s[v]!==undefined)s[v]++;});
+    Object.keys(this.state.progress).forEach(k=>{
+      if(track==='hsk'&&!/^\d/.test(k))return;
+      if(track==='duo'&&k[0]!=='D')return;
+      const v=this.state.progress[k];
+      if(s[v]!==undefined)s[v]++;
+    });
     return s;
   },
 
   // ============ STUDY ============
   openWeek(wi,di,ci){
+    this.state.currentTrack='hsk';
     if(!WEEKS[wi]||!WEEKS[wi].days){this.toast('Week not loaded yet');return;}
     this.state.currentWeek=wi;
     this.state.currentDay=di||0;
@@ -2296,19 +4154,76 @@ const APP = {
     this.state.flipped=false;
     this.go('study'); // go() will call renderStudyView() — no recursion
   },
+  openDuoSection(wi,di,ci){
+    this.state.currentTrack='duo';
+    if(!DUOLINGO[wi]||!DUOLINGO[wi].days){this.toast('Section not loaded');return;}
+    this.state.currentWeek=wi;
+    this.state.currentDay=di||0;
+    this.state.currentCard=ci||0;
+    this.state.flipped=false;
+    this.go('study');
+  },
+
+  // ============ DUOLINGO HOME ============
+  renderDuoSections(){
+    const grid=document.getElementById('duoSectionsGrid');
+    grid.innerHTML=DUOLINGO.map((w,i)=>{
+      const s=this.weekStats(i,'duo');
+      const total=w.days.reduce((a,d)=>a+d.words.length,0);
+      const pct=total?Math.round(s.got_it/total*100):0;
+      const complete=pct>=80?'complete':'';
+      return `<button class="week-card ${complete}" onclick="APP.openDuoSection(${i},0)">
+        <div class="week-done">✓</div>
+        <div class="week-num">SECTION ${i+1} · ${w.phase||''}</div>
+        <div class="week-title">${w.title}</div>
+        <div class="week-theme">${w.theme}</div>
+        <div class="week-progress">
+          <div class="week-progress-bar"><div class="week-progress-fill" style="width:${pct}%"></div></div>
+          <span>${s.got_it}/${total}</span>
+        </div>
+      </button>`;
+    }).join('');
+  },
+  updateDuoStats(){
+    const s=this.overallStats('duo');
+    document.getElementById('duoLearned').textContent=s.got_it;
+    const next=this.findNextDay('duo');
+    document.getElementById('duoSection').textContent=next.w+1;
+    const total=this.totalCards('duo');
+    document.getElementById('duoPct').textContent=total?Math.round(s.got_it/total*100)+'%':'0%';
+  },
+  updateDuoTask(){
+    const next=this.findNextDay('duo');
+    const w=DUOLINGO[next.w];
+    if(!w||!w.days){document.getElementById('duoTask').hidden=true;return;}
+    const day=w.days[next.d];
+    if(next.done){
+      document.getElementById('duoTodayName').textContent='🎉 All caught up!';
+      document.getElementById('duoTodaySub').textContent='You\'ve studied every Duolingo word. Review anytime.';
+      return;
+    }
+    let rated=0;
+    day.words.forEach((_,ci)=>{if(this.state.progress[this.pk(next.w,next.d,ci,'duo')])rated++;});
+    document.getElementById('duoTodayName').textContent=`Section ${next.w+1} · ${day.name}`;
+    document.getElementById('duoTodaySub').textContent=rated>0
+      ? `Resume — ${rated}/${day.words.length} done · ~${Math.max(1,Math.round((day.words.length-rated)*0.7))} min left`
+      : `${day.words.length} words · ~${Math.max(1,Math.round(day.words.length*0.7))} min`;
+  },
 
   renderDayTabs(){
-    const w=WEEKS[this.state.currentWeek];
+    const w=this.DATA()[this.state.currentWeek];
     if(!w||!w.days)return;
+    const lbl=this.subUnitWord();
     document.getElementById('dayTabs').innerHTML=w.days.map((d,i)=>{
       let done=0,touched=0;
       d.words.forEach((_,ci)=>{
-        const s=this.state.progress[`${this.state.currentWeek}_${i}_${ci}`];
+        const s=this.state.progress[this.pk(this.state.currentWeek,i,ci)];
         if(s)touched++;
         if(s==='got_it')done++;
       });
       const cls=done===d.words.length?'done':touched?'partial':'';
-      return `<button class="day-tab ${cls} ${i===this.state.currentDay?'active':''}" onclick="APP.switchDay(${i})">Day ${i+1}<span class="day-mark"></span></button>`;
+      const t=(d.name||'').replace(/"/g,'&quot;');
+      return `<button class="day-tab ${cls} ${i===this.state.currentDay?'active':''}" title="${t}" onclick="APP.switchDay(${i})">${lbl} ${i+1}<span class="day-mark"></span></button>`;
     }).join('');
   },
 
@@ -2320,7 +4235,7 @@ const APP = {
     this.renderCard();
   },
 
-  curDay(){return WEEKS[this.state.currentWeek].days[this.state.currentDay];},
+  curDay(){return this.DATA()[this.state.currentWeek].days[this.state.currentDay];},
   curCard(){return this.curDay().words[this.state.currentCard];},
 
   renderCard(){
@@ -2336,15 +4251,26 @@ const APP = {
       document.getElementById('pinyinFront').innerHTML=colorizePinyin(card[1]);
       document.getElementById('meaning').textContent=card[2];
       document.getElementById('meaningPinyin').innerHTML=colorizePinyin(card[1]);
-      document.getElementById('exampleHanzi').textContent=card[3];
-      document.getElementById('examplePinyin').innerHTML=colorizePinyin(card[4]);
-      document.getElementById('exampleEnglish').textContent=card[5];
+      // Example sentences exist for HSK words (7-element) but not Duolingo words (3-element).
+      const hasExample=card.length>3&&card[3];
+      const exBlock=document.getElementById('exampleBlock');
+      exBlock.style.display=hasExample?'':'none';
+      if(hasExample){
+        document.getElementById('exampleHanzi').textContent=card[3];
+        document.getElementById('examplePinyin').innerHTML=colorizePinyin(card[4]);
+        document.getElementById('exampleEnglish').textContent=card[5];
+      }
       const b=document.getElementById('hskBadge');
-      b.textContent=`HSK ${card[6]}`;
-      b.className=`hsk-badge k${card[6]}`;
+      if(card.length>6&&card[6]){
+        b.style.display='';
+        b.textContent=`HSK ${card[6]}`;
+        b.className=`hsk-badge k${card[6]}`;
+      } else {
+        b.style.display='none';
+      }
     },80);
 
-    document.getElementById('cardCounter').textContent=`Day ${this.state.currentDay+1} · ${this.state.currentCard+1} / ${day.words.length}`;
+    document.getElementById('cardCounter').textContent=`${this.subUnitWord()} ${this.state.currentDay+1} · ${this.state.currentCard+1} / ${day.words.length}`;
     document.getElementById('prevBtn').disabled=this.state.currentCard===0;
     document.getElementById('nextBtn').disabled=false;
     this.renderStrip();
@@ -2353,7 +4279,7 @@ const APP = {
   renderStrip(){
     const day=this.curDay();
     document.getElementById('cardStrip').innerHTML=day.words.map((_,i)=>{
-      const st=this.state.progress[`${this.state.currentWeek}_${this.state.currentDay}_${i}`]||'';
+      const st=this.state.progress[this.pk(this.state.currentWeek,this.state.currentDay,i)]||'';
       const a=i===this.state.currentCard?'active':'';
       return `<div class="strip-dot ${st} ${a}" onclick="APP.jumpTo(${i})"></div>`;
     }).join('');
@@ -2384,13 +4310,13 @@ const APP = {
   },
 
   rate(status){
-    const key=`${this.state.currentWeek}_${this.state.currentDay}_${this.state.currentCard}`;
+    const key=this.pk(this.state.currentWeek,this.state.currentDay,this.state.currentCard);
     const card=this.curCard();
     this.state.progress[key]=status;
     this.save();
     this.bumpStreak();
     this.syncLeaderboard();
-    track('card_rated',{week:this.state.currentWeek+1,word:card[0],rating:status});
+    track('card_rated',{track:this.state.currentTrack,week:this.state.currentWeek+1,word:card[0],rating:status});
     const labels={got_it:'✓ Got it',unsure:'? Marked unsure',again:'↻ Will repeat'};
     this.toast(labels[status]);
     setTimeout(()=>this.next(),400);
@@ -2415,21 +4341,24 @@ const APP = {
 
   showSessionComplete(){
     const wi=this.state.currentWeek,di=this.state.currentDay;
-    const day=WEEKS[wi].days[di];
+    const DATA=this.DATA();
+    const day=DATA[wi].days[di];
+    const sub=this.subUnitWord(), unit=this.unitWord();
+    const homeView=this.state.currentTrack==='duo'?'duo':'home';
     const stats={got_it:0,unsure:0,again:0};
     day.words.forEach((_,ci)=>{
-      const s=this.state.progress[`${wi}_${di}_${ci}`];
+      const s=this.state.progress[this.pk(wi,di,ci)];
       if(s&&stats[s]!==undefined)stats[s]++;
     });
     const pct=Math.round(stats.got_it/day.words.length*100);
-    const isLastDay=di===WEEKS[wi].days.length-1;
+    const isLastDay=di===DATA[wi].days.length-1;
 
     document.getElementById('cardArea').hidden=true;
     const sc=document.getElementById('sessionComplete');
     sc.hidden=false;
     sc.innerHTML=`<div class="session-complete">
       <div class="session-emoji">${pct>=80?'🎉':pct>=50?'👏':'💪'}</div>
-      <div class="session-title">Day ${di+1} Complete!</div>
+      <div class="session-title">${sub} ${di+1} Complete!</div>
       <div class="session-sub">${day.name} · ${pct}% mastery</div>
       <div class="session-stats">
         <div class="session-stat got_it"><div class="num">${stats.got_it}</div><div class="lbl">Got it</div></div>
@@ -2438,15 +4367,15 @@ const APP = {
       </div>
       <div class="session-buttons">
         ${stats.again+stats.unsure>0?`<button class="review-btn" onclick="APP.reviewWeak()">Review weak cards</button>`:''}
-        ${!isLastDay?`<button class="next-btn" onclick="APP.switchDay(${di+1});APP.hideSessionComplete()">Next day →</button>`:`<button class="next-btn" onclick="APP.go('home')">Finish week →</button>`}
-        <button class="home-btn" onclick="APP.go('home')">Home</button>
+        ${!isLastDay?`<button class="next-btn" onclick="APP.switchDay(${di+1});APP.hideSessionComplete()">Next ${sub.toLowerCase()} →</button>`:`<button class="next-btn" onclick="APP.go('${homeView}')">Finish ${unit.toLowerCase()} →</button>`}
+        <button class="home-btn" onclick="APP.go('${homeView}')">${homeView==='duo'?'Duolingo home':'Home'}</button>
       </div>
     </div>`;
 
-    // Week complete check
+    // Week/section complete check
     if(isLastDay){
       const ws=this.weekStats(wi);
-      const total=WEEKS[wi].days.reduce((a,d)=>a+d.words.length,0);
+      const total=DATA[wi].days.reduce((a,d)=>a+d.words.length,0);
       if(ws.got_it/total>=0.8){
         this.confetti();
         track('week_completed',{week:wi+1,mastery:Math.round(ws.got_it/total*100)});
@@ -2461,10 +4390,10 @@ const APP = {
   },
   reviewWeak(){
     const wi=this.state.currentWeek,di=this.state.currentDay;
-    const day=WEEKS[wi].days[di];
+    const day=this.DATA()[wi].days[di];
     const weak=[];
     day.words.forEach((_,ci)=>{
-      const s=this.state.progress[`${wi}_${di}_${ci}`];
+      const s=this.state.progress[this.pk(wi,di,ci)];
       if(s==='again'||s==='unsure')weak.push(ci);
     });
     if(weak.length===0){this.toast('No weak cards!');return;}
@@ -2540,23 +4469,34 @@ const APP = {
   },
 
   // ============ PROGRESS VIEW ============
+  setProgressTrack(t){
+    this._progTrack=t;
+    document.querySelectorAll('.ptt-btn').forEach(b=>b.classList.toggle('active',b.dataset.pt===t));
+    this.renderProgress();
+  },
   renderProgress(){
-    const s=this.overallStats();
+    const track=this._progTrack||'hsk';
+    const DATA=this.DATA(track);
+    const unit=track==='duo'?'Section':'Week';
+    document.querySelectorAll('.ptt-btn').forEach(b=>b.classList.toggle('active',b.dataset.pt===track));
+    document.getElementById('progBreakdownTitle').textContent=track==='duo'?'Duolingo Sections':'Weekly Breakdown';
+    const subLbl=track==='duo'?'Lesson':'Day';
+    const s=this.overallStats(track);
     document.getElementById('ovGot').textContent=s.got_it;
     document.getElementById('ovUnsure').textContent=s.unsure;
     document.getElementById('ovAgain').textContent=s.again;
-    document.getElementById('ovTotal').textContent=`${s.got_it+s.unsure+s.again}/${this.totalCards()}`;
+    document.getElementById('ovTotal').textContent=`${s.got_it+s.unsure+s.again}/${this.totalCards(track)}`;
 
-    document.getElementById('weekProgressList').innerHTML=WEEKS.map((w,wi)=>{
+    document.getElementById('weekProgressList').innerHTML=DATA.map((w,wi)=>{
       if(!w.days)return '';
-      const ws=this.weekStats(wi);
+      const ws=this.weekStats(wi,track);
       const total=w.days.reduce((a,d)=>a+d.words.length,0);
       const pct=Math.round(ws.got_it/total*100);
       const wordsHtml=w.days.map((d,di)=>{
-        return `<div style="grid-column:1/-1;font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin:10px 0 4px">Day ${di+1} · ${d.name}</div>`+d.words.map((card,ci)=>{
-          const st=this.state.progress[`${wi}_${di}_${ci}`]||'';
+        return `<div style="grid-column:1/-1;font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin:10px 0 4px">${subLbl} ${di+1} · ${d.name}</div>`+d.words.map((card,ci)=>{
+          const st=this.state.progress[this.pk(wi,di,ci,track)]||'';
           const icon=st==='got_it'?'✓':st==='unsure'?'?':st==='again'?'↻':'·';
-          return `<div class="word-mini ${st}" onclick="APP.jumpToCard(${wi},${di},${ci})">
+          return `<div class="word-mini ${st}" onclick="APP.jumpToCard(${wi},${di},${ci},'${track}')">
             <span class="status-icon">${icon}</span>
             <span class="han-small">${card[0]}</span>
             <span class="py-small">${colorizePinyin(card[1])}</span>
@@ -2566,7 +4506,7 @@ const APP = {
       return `<div class="week-row-card" data-w="${wi}">
         <div class="week-row-head" onclick="APP.toggleWeekRow(${wi})">
           <div>
-            <div class="week-row-title">Week ${wi+1} · ${w.title}</div>
+            <div class="week-row-title">${unit} ${wi+1} · ${w.title}</div>
             <div class="week-row-sub">${ws.got_it} learned · ${ws.unsure} unsure · ${ws.again} again</div>
           </div>
           <div class="week-row-right">
@@ -2582,8 +4522,8 @@ const APP = {
     const el=document.querySelector(`.week-row-card[data-w="${wi}"]`);
     el.classList.toggle('open');
   },
-  jumpToCard(wi,di,ci){
-    this.openWeek(wi,di);
+  jumpToCard(wi,di,ci,track){
+    if(track==='duo')this.openDuoSection(wi,di);else this.openWeek(wi,di);
     setTimeout(()=>{this.state.currentCard=ci;this.renderCard();},100);
   },
 
@@ -2596,6 +4536,9 @@ const APP = {
       this.renderProgress();
       this.renderWeeks();
       this.updateHomeStats();
+      this.renderDuoSections();
+      this.updateDuoStats();
+      this.updateDuoTask();
       this.toast('Progress reset');
     }
   },
