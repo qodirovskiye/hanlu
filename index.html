@@ -3,7 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>汉语之旅 · Chinese Journey</title>
+<title>Hànlù 汉语之旅 · Learn Chinese — HSK, Duolingo vocab & AI tutor</title>
+
+<!-- ============ SEO & social sharing ============ -->
+<meta name="description" content="Hànlù (汉语之旅) — a free Chinese learning app. Study HSK 1–3 and the full Duolingo Mandarin vocabulary with smart flashcards, pinyin tones, an AI Mandarin tutor, streaks and a leaderboard.">
+<meta name="keywords" content="learn Chinese, Mandarin, HSK, Duolingo Chinese vocabulary, flashcards, pinyin, hanzi, AI Chinese tutor">
+<meta name="theme-color" content="#4a7c59">
+<link rel="canonical" href="https://qodirovskiye.github.io/hanlu/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hànlù 汉语之旅">
+<meta property="og:title" content="Hànlù — Learn Chinese with flashcards & an AI tutor">
+<meta property="og:description" content="Free Chinese learning app: HSK 1–3 + the full Duolingo Mandarin vocabulary, smart flashcards with pinyin tones, an AI Mandarin tutor, streaks and a live leaderboard.">
+<meta property="og:url" content="https://qodirovskiye.github.io/hanlu/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hànlù — Learn Chinese with flashcards & an AI tutor">
+<meta name="twitter:description" content="Free Chinese learning app: HSK + Duolingo vocabulary, flashcards, pinyin tones, and an AI Mandarin tutor.">
 
 <!-- ============ Google Analytics 4 ============
      To activate analytics, replace G-9170DD8R6H (in both lines below) with your real GA4 Measurement ID.
@@ -386,6 +400,75 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
 .palette-dot{width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
 .palette-name{font-size:11px;letter-spacing:.04em;color:var(--ink-soft)}
 .palette-swatch.active .palette-name{color:var(--accent);font-weight:700}
+
+/* ===== Daily Challenge card (home) ===== */
+.daily-challenge{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg,var(--accent-soft),var(--card));border:1px solid var(--line);border-radius:16px;padding:16px 20px;margin-bottom:28px}
+.dc-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;font-weight:600}
+.dc-word{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.dc-hanzi{font-size:30px;line-height:1}
+.dc-pinyin{font-size:16px;color:var(--accent);font-style:italic}
+.dc-meaning{font-size:15px;color:var(--ink-soft)}
+.dc-actions{display:flex;align-items:center;gap:8px}
+.dc-btn{padding:9px 14px;border-radius:999px;background:var(--bg-soft);color:var(--ink);font-size:13px;font-weight:600;transition:all .2s var(--ease)}
+.dc-btn:hover{background:var(--line)}
+.dc-btn.dc-ask{background:var(--accent);color:#fff}
+.dc-btn.dc-ask:hover{transform:translateY(-1px);box-shadow:var(--shadow-soft)}
+
+/* ===== Share button ===== */
+.share-row{display:flex;justify-content:center;margin:36px 0 8px}
+.share-btn{padding:11px 22px;border-radius:999px;background:var(--bg-soft);color:var(--ink-soft);font-size:14px;font-weight:600;transition:all .2s var(--ease)}
+.share-btn:hover{background:var(--accent-soft);color:var(--accent)}
+
+/* ===== AI Tutor ===== */
+.tutor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.tutor-head h2{font-family:'Songti SC',serif;font-size:26px;font-weight:500}
+.tutor-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.tutor-head-actions{display:flex;align-items:center;gap:6px}
+.tutor-usage{font-size:11px;color:var(--muted);margin-right:4px;white-space:nowrap}
+.tutor-usage.warn{color:var(--amber);font-weight:600}
+.tutor-banner{background:var(--amber-soft);color:var(--ink);border:1px solid var(--amber);border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:12px;line-height:1.5}
+.tutor-banner a,.tutor-banner button.link{color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer}
+.tutor-messages{min-height:280px;max-height:min(58vh,560px);overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:8px 2px;margin-bottom:12px}
+.tutor-empty{margin:auto;text-align:center;color:var(--muted);font-size:14px;max-width:420px;line-height:1.6}
+.tutor-empty .te-emoji{font-size:34px;display:block;margin-bottom:10px}
+.tutor-msg{max-width:86%;padding:11px 15px;border-radius:16px;font-size:14.5px;line-height:1.6;white-space:normal;word-wrap:break-word;animation:tmIn .25s var(--ease)}
+@keyframes tmIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.tutor-msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:5px}
+.tutor-msg.ai{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
+.tutor-msg.err{align-self:flex-start;background:var(--red-soft);border:1px solid var(--red);color:var(--ink)}
+.tutor-msg.ai p{margin:0 0 8px}.tutor-msg.ai p:last-child{margin-bottom:0}
+.tutor-msg.ai ul{margin:6px 0;padding-left:20px}.tutor-msg.ai li{margin:3px 0}
+.tutor-msg.ai code{background:var(--bg-soft);padding:1px 5px;border-radius:5px;font-size:.9em}
+.tutor-msg.ai strong{color:var(--ink)}
+.tutor-typing{align-self:flex-start;display:flex;gap:4px;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:16px;border-bottom-left-radius:5px}
+.tutor-typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:tDot 1.2s infinite ease-in-out}
+.tutor-typing span:nth-child(2){animation-delay:.18s}.tutor-typing span:nth-child(3){animation-delay:.36s}
+@keyframes tDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+.tutor-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.tutor-chip{padding:8px 13px;border-radius:999px;background:var(--bg-soft);color:var(--ink-soft);font-size:12.5px;font-weight:500;border:1px solid var(--line);transition:all .2s var(--ease)}
+.tutor-chip:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.tutor-input{display:flex;gap:10px;align-items:flex-end;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 8px 8px 16px}
+.tutor-input:focus-within{border-color:var(--accent)}
+.tutor-input textarea{flex:1;border:none;background:transparent;color:var(--ink);font-size:15px;line-height:1.5;resize:none;max-height:140px;outline:none;padding:6px 0}
+.tutor-send{width:40px;height:40px;flex:0 0 40px;border-radius:50%;background:var(--accent);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s var(--ease)}
+.tutor-send:hover:not(:disabled){transform:scale(1.06)}
+.tutor-send:disabled{opacity:.45;cursor:not-allowed}
+.tutor-foot{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6}
+/* Tutor modal fields */
+.modal-sub{font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:16px}
+.modal-hint{font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px}
+.tm-field-label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.tm-input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-soft);color:var(--ink);font-size:14px;outline:none}
+.tm-input:focus{border-color:var(--accent)}
+.modal-btn-row{display:flex;gap:10px;margin-top:18px}
+.modal-btn-row .secondary-btn,.modal-btn-row .primary-btn{flex:1;margin-top:0}
+@media(max-width:640px){
+  .tutor-msg{max-width:92%}
+  .tutor-messages{max-height:52vh}
+  .daily-challenge{padding:14px}
+  .dc-actions{width:100%}
+  .dc-btn.dc-ask{flex:1}
+}
 </style>
 <style>
 .lb-head{text-align:center;margin-bottom:20px}
@@ -415,6 +498,7 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
     <button class="nav-tab" data-view="home" onclick="APP.go('home')">Home</button>
     <button class="nav-tab" data-view="duo" onclick="APP.go('duo')">🦉 Duolingo</button>
     <button class="nav-tab" data-view="study" onclick="APP.go('study')">Flashcards</button>
+    <button class="nav-tab" data-view="tutor" onclick="APP.go('tutor')">🤖 AI Tutor</button>
     <button class="nav-tab" data-view="grammar" onclick="APP.go('grammar')">Grammar</button>
     <button class="nav-tab" data-view="progress" onclick="APP.go('progress')">Progress</button>
     <button class="nav-tab" data-view="leaderboard" onclick="APP.go('leaderboard')">🏆 Rank</button>
@@ -455,11 +539,28 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
       <button class="primary-action" onclick="APP.continueStudy()">Continue studying →</button>
     </div>
 
+    <div class="daily-challenge" id="dailyChallenge" hidden>
+      <div class="dc-left">
+        <div class="dc-label">🎯 Daily Challenge · Word of the day</div>
+        <div class="dc-word"><span class="dc-hanzi han" id="dcHanzi">好</span>
+          <span class="dc-pinyin" id="dcPinyin">hǎo</span>
+          <span class="dc-meaning" id="dcMeaning">good</span></div>
+      </div>
+      <div class="dc-actions">
+        <button class="dc-btn" onclick="APP.speakDaily()" title="Hear it">🔊</button>
+        <button class="dc-btn dc-ask" onclick="APP.askTutorAboutDaily()">Ask the AI tutor →</button>
+      </div>
+    </div>
+
     <div class="section-title">3-Month Roadmap</div>
     <div class="roadmap" id="roadmap"></div>
 
     <div class="section-title">All Weeks</div>
     <div class="weeks-grid" id="weeksGrid"></div>
+
+    <div class="share-row">
+      <button class="share-btn" onclick="APP.share()">📤 Share Hànlù with a friend</button>
+    </div>
   </section>
 
   <!-- STUDY VIEW -->
@@ -605,7 +706,49 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
     <div class="section-title">All Sections</div>
     <div class="weeks-grid" id="duoSectionsGrid"></div>
   </section>
+
+  <!-- AI TUTOR VIEW -->
+  <section class="view" id="tutorView" hidden>
+    <div class="tutor-head">
+      <div>
+        <h2 class="han">🤖 AI 老师</h2>
+        <div class="tutor-sub">Your Mandarin coach — ask anything about Chinese</div>
+      </div>
+      <div class="tutor-head-actions">
+        <span class="tutor-usage" id="tutorUsage" title="Daily message limit (local)"></span>
+        <button class="icon-btn" onclick="TUTOR.openSettings()" id="tutorSettingsBtn" title="Connect a backend / settings">⚙️</button>
+        <button class="icon-btn" onclick="TUTOR.clear()" id="tutorClearBtn" title="Clear chat">🗑️</button>
+      </div>
+    </div>
+
+    <div class="tutor-banner" id="tutorBanner" hidden></div>
+
+    <div class="tutor-messages" id="tutorMessages" role="log" aria-live="polite" aria-label="Conversation with the AI Mandarin tutor"></div>
+
+    <div class="tutor-chips" id="tutorChips" aria-label="Suggested prompts"></div>
+
+    <form class="tutor-input" id="tutorForm" onsubmit="return TUTOR.onSubmit(event)">
+      <textarea id="tutorInput" rows="1" placeholder="Ask your tutor… (e.g. explain 了)" aria-label="Message to the AI tutor" maxlength="2000"></textarea>
+      <button type="submit" class="tutor-send" id="tutorSend" aria-label="Send message">➤</button>
+    </form>
+    <div class="tutor-foot">The tutor can make mistakes — double-check important details. <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line.</div>
+  </section>
 </main>
+
+<!-- AI Tutor Settings Modal -->
+<div class="modal-backdrop" id="tutorModal" onclick="if(event.target===this)TUTOR.closeSettings()">
+  <div class="modal">
+    <h2>🤖 AI Tutor setup</h2>
+    <p class="modal-sub">The tutor needs a small backend so your API key stays private (it can't live in this public page). Deploy <code>api/chat.js</code> to Vercel (see the README), then paste your deployment URL below.</p>
+    <label class="tm-field-label" for="tutorEndpointInput">Backend base URL</label>
+    <input type="url" id="tutorEndpointInput" class="tm-input" placeholder="https://your-app.vercel.app" autocomplete="off" spellcheck="false">
+    <p class="modal-hint">Leave empty to use <b>Demo mode</b> (canned replies, no API calls). When set, the app calls <code>&lt;url&gt;/api/chat</code>.</p>
+    <div class="modal-btn-row">
+      <button class="secondary-btn" onclick="TUTOR.closeSettings()">Cancel</button>
+      <button class="primary-btn" onclick="TUTOR.saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
 
 <!-- Theme Picker Modal -->
 <div class="modal-backdrop" id="themeModal" onclick="if(event.target===this)APP.closeThemePicker()">
@@ -3847,6 +3990,8 @@ const APP = {
       this.updateTodayTask();
       this.syncLeaderboard();
     }
+    this.renderDailyChallenge();
+    TUTOR.init();
     this.startStudyTimer();
   },
 
@@ -3994,6 +4139,7 @@ const APP = {
     document.getElementById('homeView').hidden=view!=='home';
     document.getElementById('duoView').hidden=view!=='duo';
     document.getElementById('studyView').hidden=view!=='study';
+    document.getElementById('tutorView').hidden=view!=='tutor';
     document.getElementById('grammarView').hidden=view!=='grammar';
     document.getElementById('progressView').hidden=view!=='progress';
     document.getElementById('leaderboardView').hidden=view!=='leaderboard';
@@ -4001,8 +4147,9 @@ const APP = {
     this.state.currentView=view;
     if(view==='progress')this.renderProgress();
     if(view==='leaderboard')this.renderLeaderboard();
-    if(view==='home'){this.renderRoadmap();this.renderWeeks();this.updateHomeStats();this.updateTodayTask();}
+    if(view==='home'){this.renderRoadmap();this.renderWeeks();this.updateHomeStats();this.updateTodayTask();this.renderDailyChallenge();}
     if(view==='duo'){this.renderDuoSections();this.updateDuoStats();this.updateDuoTask();}
+    if(view==='tutor')TUTOR.open();
     if(view==='study')this.renderStudyView(); // direct call — no recursion
     window.scrollTo({top:0,behavior:'smooth'});
   },
@@ -4061,6 +4208,60 @@ const APP = {
     document.getElementById('hsWeek').textContent=next.w+1;
     const total=this.totalCards('hsk');
     document.getElementById('hsPct').textContent=total?Math.round(s.got_it/total*100)+'%':'0%';
+  },
+
+  // ============ ENGAGEMENT: daily challenge + share ============
+  // A deterministic "word of the day" drawn from all available vocabulary,
+  // so every learner sees the same word on a given day and it changes daily.
+  allWords(){
+    if(this._allWords)return this._allWords;
+    const out=[];
+    [WEEKS,DUOLINGO].forEach(track=>track.forEach(u=>{if(u.days)u.days.forEach(d=>d.words.forEach(w=>out.push(w)));}));
+    this._allWords=out;
+    return out;
+  },
+  dailyWord(){
+    const words=this.allWords();
+    if(!words.length)return null;
+    const now=new Date();
+    const dayOfYear=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
+    return words[dayOfYear%words.length];
+  },
+  renderDailyChallenge(){
+    const w=this.dailyWord();
+    const el=document.getElementById('dailyChallenge');
+    if(!w||!el)return;
+    this._daily=w;
+    document.getElementById('dcHanzi').textContent=w[0];
+    document.getElementById('dcPinyin').innerHTML=colorizePinyin(w[1]);
+    document.getElementById('dcMeaning').textContent=w[2];
+    el.hidden=false;
+  },
+  speakDaily(){
+    const w=this._daily;if(!w||!('speechSynthesis' in window))return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(w[0]);u.lang='zh-CN';u.rate=0.85;
+    speechSynthesis.speak(u);
+  },
+  askTutorAboutDaily(){
+    const w=this._daily;if(!w)return;
+    track('daily_challenge_ask_tutor',{word:w[0]});
+    this.go('tutor');
+    TUTOR.send(`Explain the word ${w[0]} (${w[1]}) — it means "${w[2]}". Give a short example sentence with pinyin and English.`);
+  },
+  async share(){
+    const url='https://qodirovskiye.github.io/hanlu/';
+    const text="I'm learning Chinese with Hànlù 🇨🇳 — flashcards, the full Duolingo vocabulary, and an AI tutor. Join me:";
+    track('share_clicked');
+    try{
+      if(navigator.share){await navigator.share({title:'Hànlù — Learn Chinese',text,url});return;}
+    }catch(e){if(e&&e.name==='AbortError')return;}
+    try{
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      this.toast('Link copied — paste it anywhere! 📋');
+    }catch(e){
+      this.toast(url);
+    }
   },
   totalCards(track){
     let total=0;
@@ -4602,6 +4803,260 @@ const APP = {
     t.classList.add('show');
     clearTimeout(this._tt);
     this._tt=setTimeout(()=>t.classList.remove('show'),1800);
+  }
+};
+
+// ============ AI TUTOR ============
+const TUTOR = {
+  KEY_CHAT:'hanlu_ai_chat',
+  KEY_CFG:'hanlu_ai_endpoint',
+  KEY_USAGE:'hanlu_ai_usage',
+  DAILY_LIMIT:40,            // local soft cap so you don't accidentally burn API credits
+  MAX_LEN:2000,
+  HISTORY_KEEP:40,           // messages persisted to localStorage
+  SEND_TURNS:16,             // turns actually sent to the backend
+  messages:[],
+  cfg:{endpoint:''},
+  loading:false,
+  CHIPS:[
+    {label:'💡 Explain a word', text:'Explain the word: ', send:false},
+    {label:'📝 Quiz me', text:'Quiz me with 5 quick HSK 1 vocabulary questions, one at a time.', send:true},
+    {label:'✍️ Correct my Chinese', text:'Correct my Chinese sentence: ', send:false},
+    {label:'📖 Explain grammar', text:'Explain this grammar point simply: ', send:false},
+    {label:'🔁 5 practice sentences', text:'Give me 5 short practice sentences using common HSK 1 words, each with hanzi, pinyin and English.', send:true},
+  ],
+
+  init(){
+    try{const c=localStorage.getItem(this.KEY_CHAT);if(c)this.messages=JSON.parse(c)||[];}catch(e){this.messages=[];}
+    try{const e=localStorage.getItem(this.KEY_CFG);if(e)this.cfg.endpoint=e;}catch(e){}
+    this.renderChips();
+    const ta=document.getElementById('tutorInput');
+    if(ta){
+      ta.addEventListener('input',()=>this.autoGrow(ta));
+      ta.addEventListener('keydown',ev=>{
+        if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();this.onSubmit(ev);}
+      });
+    }
+    this.updateUsageLabel();
+  },
+  open(){
+    this.renderBanner();
+    this.renderMessages();
+    this.updateUsageLabel();
+    setTimeout(()=>{const ta=document.getElementById('tutorInput');if(ta)ta.focus();this.scrollToBottom();},60);
+  },
+
+  // ---- endpoint / mode ----
+  normalizeEndpoint(base){
+    base=(base||'').trim().replace(/\/+$/,'');
+    if(!base)return '';
+    return /\/api\/chat$/.test(base)?base:base+'/api/chat';
+  },
+  endpoint(){
+    if(this.cfg.endpoint)return this.normalizeEndpoint(this.cfg.endpoint);
+    const h=location.hostname;
+    const localOrPages=location.protocol==='file:'||!h||h==='localhost'||h==='127.0.0.1'||/github\.io$/.test(h);
+    return localOrPages?'':'/api/chat'; // same-origin auto-use only on a real deployment (e.g. Vercel)
+  },
+  isDemo(){return this.endpoint()==='';},
+
+  renderBanner(){
+    const b=document.getElementById('tutorBanner');
+    if(!b)return;
+    if(this.isDemo()){
+      b.hidden=false;
+      b.innerHTML='🧪 <b>Demo mode.</b> You\'re seeing sample replies. To get real AI tutoring, deploy the backend and '+
+        '<button class="link" onclick="TUTOR.openSettings()">connect it here</button>. See the README for 2-minute setup.';
+    } else {
+      b.hidden=true;
+    }
+  },
+
+  // ---- usage limit (local, soft) ----
+  getUsage(){
+    const today=new Date().toISOString().slice(0,10);
+    let u={date:today,count:0};
+    try{const raw=localStorage.getItem(this.KEY_USAGE);if(raw){const p=JSON.parse(raw);if(p&&p.date===today)u=p;}}catch(e){}
+    return u;
+  },
+  bumpUsage(){
+    const u=this.getUsage();u.count++;
+    try{localStorage.setItem(this.KEY_USAGE,JSON.stringify(u));}catch(e){}
+    this.updateUsageLabel();
+  },
+  limitReached(){return this.getUsage().count>=this.DAILY_LIMIT;},
+  updateUsageLabel(){
+    const el=document.getElementById('tutorUsage');if(!el)return;
+    if(this.isDemo()){el.textContent='Demo mode';el.classList.remove('warn');return;}
+    const left=Math.max(0,this.DAILY_LIMIT-this.getUsage().count);
+    el.textContent=`${left}/${this.DAILY_LIMIT} left today`;
+    el.classList.toggle('warn',left<=5);
+  },
+
+  // ---- rendering ----
+  renderChips(){
+    const c=document.getElementById('tutorChips');if(!c)return;
+    c.innerHTML=this.CHIPS.map((ch,i)=>`<button class="tutor-chip" onclick="TUTOR.chip(${i})">${ch.label}</button>`).join('');
+  },
+  chip(i){
+    const ch=this.CHIPS[i];if(!ch)return;
+    if(ch.send){this.send(ch.text);}
+    else{const ta=document.getElementById('tutorInput');ta.value=ch.text;ta.focus();this.autoGrow(ta);}
+  },
+  renderMessages(){
+    const box=document.getElementById('tutorMessages');if(!box)return;
+    if(!this.messages.length){
+      box.innerHTML='<div class="tutor-empty"><span class="te-emoji">🧧</span>你好! I\'m your Mandarin tutor. Ask me to explain a word, check a sentence, quiz you, or teach grammar — tap a suggestion below or just type.</div>';
+      return;
+    }
+    box.innerHTML=this.messages.map(m=>{
+      if(m.role==='user')return `<div class="tutor-msg user">${escapeHtml(m.content)}</div>`;
+      const cls=m.error?'tutor-msg err':'tutor-msg ai';
+      return `<div class="${cls}">${this.fmt(m.content)}</div>`;
+    }).join('');
+    this.scrollToBottom();
+  },
+  fmt(text){
+    let s=escapeHtml(text);
+    s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+    s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+    const lines=s.split(/\n/);
+    let html='',inList=false,para=[];
+    const flushPara=()=>{if(para.length){html+='<p>'+para.join('<br>')+'</p>';para=[];}};
+    const closeList=()=>{if(inList){html+='</ul>';inList=false;}};
+    for(const ln of lines){
+      const t=ln.trim();
+      if(/^[-*]\s+/.test(t)){flushPara();if(!inList){html+='<ul>';inList=true;}html+='<li>'+t.replace(/^[-*]\s+/,'')+'</li>';}
+      else if(t===''){flushPara();closeList();}
+      else{closeList();para.push(t);}
+    }
+    flushPara();closeList();
+    return colorizePinyinHTML(html);
+  },
+  showTyping(){
+    const box=document.getElementById('tutorMessages');if(!box)return;
+    const d=document.createElement('div');d.className='tutor-typing';d.id='tutorTyping';
+    d.innerHTML='<span></span><span></span><span></span>';
+    box.appendChild(d);this.scrollToBottom();
+  },
+  hideTyping(){const d=document.getElementById('tutorTyping');if(d)d.remove();},
+  scrollToBottom(){const box=document.getElementById('tutorMessages');if(box)box.scrollTop=box.scrollHeight;},
+  autoGrow(ta){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,140)+'px';},
+  setLoading(on){
+    this.loading=on;
+    const btn=document.getElementById('tutorSend');if(btn)btn.disabled=on;
+  },
+  save(){try{localStorage.setItem(this.KEY_CHAT,JSON.stringify(this.messages.slice(-this.HISTORY_KEEP)));}catch(e){}},
+
+  // ---- send flow ----
+  onSubmit(e){
+    if(e&&e.preventDefault)e.preventDefault();
+    const ta=document.getElementById('tutorInput');
+    const text=(ta?ta.value:'').trim();
+    if(!text)return false;            // empty messages are blocked
+    if(ta){ta.value='';this.autoGrow(ta);}
+    this.send(text);
+    return false;
+  },
+  async send(text){
+    text=(text||'').trim();
+    if(!text||this.loading)return;
+    if(text.length>this.MAX_LEN)text=text.slice(0,this.MAX_LEN);
+    // ensure we're on the tutor view
+    if(APP.state.currentView!=='tutor')APP.go('tutor');
+
+    if(!this.isDemo()&&this.limitReached()){
+      this.messages.push({role:'assistant',error:true,content:`You've hit today's local limit of ${this.DAILY_LIMIT} messages (a guard so you don't burn API credits). It resets tomorrow — or raise DAILY_LIMIT in the code.`});
+      this.renderMessages();this.save();return;
+    }
+
+    this.messages.push({role:'user',content:text});
+    this.renderMessages();this.save();
+    track('ai_tutor_message',{mode:this.isDemo()?'demo':'live'});
+    this.setLoading(true);this.showTyping();
+
+    try{
+      let reply;
+      if(this.isDemo()){
+        await new Promise(r=>setTimeout(r,500));
+        reply=this.mockReply(text);
+      }else{
+        reply=await this.callBackend();
+        this.bumpUsage();
+      }
+      this.hideTyping();
+      this.messages.push({role:'assistant',content:reply});
+      this.renderMessages();this.save();
+    }catch(err){
+      this.hideTyping();
+      this.messages.push({role:'assistant',error:true,content:this.errText(err)});
+      this.renderMessages();this.save();
+      track('ai_tutor_error');
+    }finally{
+      this.setLoading(false);
+    }
+  },
+  async callBackend(){
+    const url=this.endpoint();
+    // send only role/content of the most recent turns
+    const payload={messages:this.messages.filter(m=>!m.error).slice(-this.SEND_TURNS).map(m=>({role:m.role,content:m.content}))};
+    let res;
+    try{
+      res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    }catch(e){throw new Error('NETWORK');}
+    let data={};
+    try{data=await res.json();}catch(e){}
+    if(!res.ok){const m=data&&data.error?data.error:`Request failed (${res.status}).`;throw new Error(m);}
+    if(!data||!data.reply)throw new Error('The tutor returned an empty reply.');
+    return data.reply;
+  },
+  errText(err){
+    const m=(err&&err.message)||'';
+    if(m==='NETWORK'){
+      return this.isDemo()
+        ? 'Network error. (You\'re in demo mode — connect a backend in ⚙️ settings for real replies.)'
+        : 'Couldn\'t reach the AI backend. Check that your backend URL is correct in ⚙️ settings and that it\'s deployed.';
+    }
+    return m||'Something went wrong. Please try again.';
+  },
+  mockReply(text){
+    const t=text.toLowerCase();
+    let body;
+    if(t.includes('quiz')){
+      body='Sure! Quick quiz (demo) 📝\n\n1. What does 你好 (nǐ hǎo) mean?\n2. How do you say "thank you"?\n3. What tone is the *ǎ* in 好?\n\nReply with your answers and I\'ll check them — once a real backend is connected.';
+    }else if(t.includes('correct')){
+      body='In demo mode I can\'t check your sentence yet, but here\'s the format I\'d use:\n\n- **You wrote:** (your sentence)\n- **Corrected:** the fixed version with pinyin\n- **Why:** a one-line explanation\n\nConnect a backend (⚙️) to get real corrections.';
+    }else{
+      body='This is a **demo reply** so you can see how the tutor works ✨\n\nExample of a real answer:\n好 (hǎo) means "good". \n- 你好 (nǐ hǎo) — hello\n- 很好 (hěn hǎo) — very good\n\nConnect a backend in ⚙️ settings for real, personalised tutoring.';
+    }
+    return body;
+  },
+
+  clear(){
+    if(!this.messages.length)return;
+    if(!confirm('Clear this conversation?'))return;
+    this.messages=[];this.save();this.renderMessages();
+    track('ai_tutor_cleared');
+  },
+
+  // ---- settings ----
+  openSettings(){
+    const inp=document.getElementById('tutorEndpointInput');
+    if(inp)inp.value=this.cfg.endpoint||'';
+    document.getElementById('tutorModal').classList.add('open');
+    setTimeout(()=>{if(inp)inp.focus();},80);
+  },
+  closeSettings(){document.getElementById('tutorModal').classList.remove('open');},
+  saveSettings(){
+    const inp=document.getElementById('tutorEndpointInput');
+    this.cfg.endpoint=(inp?inp.value:'').trim();
+    try{
+      if(this.cfg.endpoint)localStorage.setItem(this.KEY_CFG,this.cfg.endpoint);
+      else localStorage.removeItem(this.KEY_CFG);
+    }catch(e){}
+    this.closeSettings();
+    this.renderBanner();this.updateUsageLabel();
+    APP.toast(this.isDemo()?'Demo mode (no backend set)':'Backend connected ✓');
   }
 };
 
