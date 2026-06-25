@@ -428,6 +428,11 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
 .tutor-usage.warn{color:var(--amber);font-weight:600}
 .tutor-banner{background:var(--amber-soft);color:var(--ink);border:1px solid var(--amber);border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:12px;line-height:1.5}
 .tutor-banner a,.tutor-banner button.link{color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer}
+.tutor-banner.ok{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.tutor-banner-actions{margin-top:10px}
+.tutor-progress{height:8px;border-radius:999px;background:var(--bg-soft);overflow:hidden;margin:10px 0 6px}
+.tutor-progress-fill{height:100%;background:var(--accent);border-radius:999px;width:0;transition:width .3s var(--ease)}
+.tutor-prog-text{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tutor-messages{min-height:280px;max-height:min(58vh,560px);overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:8px 2px;margin-bottom:12px}
 .tutor-empty{margin:auto;text-align:center;color:var(--muted);font-size:14px;max-width:420px;line-height:1.6}
 .tutor-empty .te-emoji{font-size:34px;display:block;margin-bottom:10px}
@@ -457,6 +462,9 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
 /* Tutor modal fields */
 .modal-sub{font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:16px}
 .modal-hint{font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px}
+.tm-advanced{margin:14px 0 4px;border-top:1px solid var(--line);padding-top:12px}
+.tm-advanced summary{cursor:pointer;font-size:13px;color:var(--ink-soft);font-weight:600;list-style:revert}
+.tm-advanced summary:hover{color:var(--ink)}
 .tm-field-label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .tm-input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-soft);color:var(--ink);font-size:14px;outline:none}
 .tm-input:focus{border-color:var(--accent)}
@@ -715,8 +723,8 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
         <div class="tutor-sub">Your Mandarin coach — ask anything about Chinese</div>
       </div>
       <div class="tutor-head-actions">
-        <span class="tutor-usage" id="tutorUsage" title="Daily message limit (local)"></span>
-        <button class="icon-btn" onclick="TUTOR.openSettings()" id="tutorSettingsBtn" title="Connect a backend / settings">⚙️</button>
+        <span class="tutor-usage" id="tutorUsage" title="AI tutor mode"></span>
+        <button class="icon-btn" onclick="TUTOR.openSettings()" id="tutorSettingsBtn" title="Advanced settings (optional)">⚙️</button>
         <button class="icon-btn" onclick="TUTOR.clear()" id="tutorClearBtn" title="Clear chat">🗑️</button>
       </div>
     </div>
@@ -731,18 +739,22 @@ kbd{background:var(--card);border:1px solid var(--line);border-radius:5px;paddin
       <textarea id="tutorInput" rows="1" placeholder="Ask your tutor… (e.g. explain 了)" aria-label="Message to the AI tutor" maxlength="2000"></textarea>
       <button type="submit" class="tutor-send" id="tutorSend" aria-label="Send message">➤</button>
     </form>
-    <div class="tutor-foot">The tutor can make mistakes — double-check important details. <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line.</div>
+    <div class="tutor-foot">Runs free on your device — the local AI is small, so it can make mistakes; double-check important details. <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line.</div>
   </section>
 </main>
 
 <!-- AI Tutor Settings Modal -->
 <div class="modal-backdrop" id="tutorModal" onclick="if(event.target===this)TUTOR.closeSettings()">
   <div class="modal">
-    <h2>🤖 AI Tutor setup</h2>
-    <p class="modal-sub">The tutor needs a small backend so your API key stays private (it can't live in this public page). Deploy <code>api/chat.js</code> to Vercel (see the README), then paste your deployment URL below.</p>
-    <label class="tm-field-label" for="tutorEndpointInput">Backend base URL</label>
-    <input type="url" id="tutorEndpointInput" class="tm-input" placeholder="https://your-app.vercel.app" autocomplete="off" spellcheck="false">
-    <p class="modal-hint">Leave empty to use <b>Demo mode</b> (canned replies, no API calls). When set, the app calls <code>&lt;url&gt;/api/chat</code>.</p>
+    <h2>⚙️ AI Tutor — advanced</h2>
+    <p class="modal-sub">The tutor is <b>free</b> and runs locally in your browser — no setup needed. This section is <b>optional</b> for advanced users only.</p>
+    <p class="modal-hint" id="tutorModelInfo">Local model: <code id="tutorModelId">—</code></p>
+    <details class="tm-advanced">
+      <summary>Use a custom paid API backend instead (optional)</summary>
+      <p class="modal-hint">Only if you'd rather use a paid Claude/OpenAI backend you host yourself (see README). Leave empty to keep the free local AI.</p>
+      <label class="tm-field-label" for="tutorEndpointInput">Backend base URL (optional, paid)</label>
+      <input type="url" id="tutorEndpointInput" class="tm-input" placeholder="https://your-app.vercel.app" autocomplete="off" spellcheck="false">
+    </details>
     <div class="modal-btn-row">
       <button class="secondary-btn" onclick="TUTOR.closeSettings()">Cancel</button>
       <button class="primary-btn" onclick="TUTOR.saveSettings()">Save</button>
@@ -4806,91 +4818,139 @@ const APP = {
   }
 };
 
-// ============ AI TUTOR ============
+// ============ AI TUTOR — FREE local in-browser AI (WebLLM / WebGPU) ============
+// The default tutor runs a small open LLM *in your browser* over WebGPU — no API
+// key, no server, $0 per message (window.HANLU_LLM, defined in the module script
+// below). To change the model, edit LOCAL_TUTOR_MODEL_ID in that module script.
+// An optional paid backend (api/chat.js) is used ONLY if you explicitly paste its
+// URL under Advanced settings — it is never the default and needs no key here.
 const TUTOR = {
   KEY_CHAT:'hanlu_ai_chat',
-  KEY_CFG:'hanlu_ai_endpoint',
-  KEY_USAGE:'hanlu_ai_usage',
-  DAILY_LIMIT:40,            // local soft cap so you don't accidentally burn API credits
+  KEY_ENDPOINT:'hanlu_ai_endpoint',   // optional advanced paid backend URL
+  KEY_LOCAL:'hanlu_ai_local_enabled', // did the user opt into the local model?
+  KEY_USAGE:'hanlu_ai_usage',         // soft cap — only applies to the optional paid backend
+  DAILY_LIMIT:40,
   MAX_LEN:2000,
-  HISTORY_KEEP:40,           // messages persisted to localStorage
-  SEND_TURNS:16,             // turns actually sent to the backend
+  HISTORY_KEEP:40,
+  SEND_TURNS:8,                        // local models have small context windows
+  SYSTEM:'You are Hanlu, a friendly Mandarin tutor. Help learners study Chinese. Give concise answers with hanzi, pinyin, and English. Use short examples. Correct mistakes gently. Create short quizzes when asked. Keep answers brief. If unsure, say so.',
   messages:[],
-  cfg:{endpoint:''},
+  endpoint:'',
+  localEnabled:false,
+  localState:'idle',   // idle | loading | ready | error
+  loadPct:0, loadText:'',
   loading:false,
   CHIPS:[
     {label:'💡 Explain a word', text:'Explain the word: ', send:false},
     {label:'📝 Quiz me', text:'Quiz me with 5 quick HSK 1 vocabulary questions, one at a time.', send:true},
-    {label:'✍️ Correct my Chinese', text:'Correct my Chinese sentence: ', send:false},
+    {label:'✍️ Correct my sentence', text:'Correct my Chinese sentence: ', send:false},
     {label:'📖 Explain grammar', text:'Explain this grammar point simply: ', send:false},
     {label:'🔁 5 practice sentences', text:'Give me 5 short practice sentences using common HSK 1 words, each with hanzi, pinyin and English.', send:true},
   ],
 
   init(){
     try{const c=localStorage.getItem(this.KEY_CHAT);if(c)this.messages=JSON.parse(c)||[];}catch(e){this.messages=[];}
-    try{const e=localStorage.getItem(this.KEY_CFG);if(e)this.cfg.endpoint=e;}catch(e){}
+    try{this.endpoint=localStorage.getItem(this.KEY_ENDPOINT)||'';}catch(e){}
+    try{this.localEnabled=localStorage.getItem(this.KEY_LOCAL)==='1';}catch(e){}
     this.renderChips();
     const ta=document.getElementById('tutorInput');
     if(ta){
       ta.addEventListener('input',()=>this.autoGrow(ta));
-      ta.addEventListener('keydown',ev=>{
-        if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();this.onSubmit(ev);}
-      });
+      ta.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();this.onSubmit(ev);}});
     }
-    this.updateUsageLabel();
   },
   open(){
-    this.renderBanner();
+    this.renderStatus();
     this.renderMessages();
-    this.updateUsageLabel();
     setTimeout(()=>{const ta=document.getElementById('tutorInput');if(ta)ta.focus();this.scrollToBottom();},60);
+    // If the user already opted into local AI, start (re)loading it. The model is
+    // cached after the first download, so subsequent loads are fast.
+    if(this.mode()==='local'&&this.localEnabled&&this.localState==='idle')this.loadLocal();
   },
 
-  // ---- endpoint / mode ----
-  normalizeEndpoint(base){
-    base=(base||'').trim().replace(/\/+$/,'');
-    if(!base)return '';
-    return /\/api\/chat$/.test(base)?base:base+'/api/chat';
+  // ---- mode / capability ----
+  supported(){return !!(window.HANLU_LLM&&window.HANLU_LLM.supported);},
+  mode(){
+    if(this.endpoint)return 'backend';      // optional paid backend (explicitly set)
+    if(this.supported())return 'local';     // free local WebLLM (default)
+    return 'demo';                          // no WebGPU → sample replies
   },
-  endpoint(){
-    if(this.cfg.endpoint)return this.normalizeEndpoint(this.cfg.endpoint);
-    const h=location.hostname;
-    const localOrPages=location.protocol==='file:'||!h||h==='localhost'||h==='127.0.0.1'||/github\.io$/.test(h);
-    return localOrPages?'':'/api/chat'; // same-origin auto-use only on a real deployment (e.g. Vercel)
-  },
-  isDemo(){return this.endpoint()==='';},
 
-  renderBanner(){
+  // ---- status banner ----
+  renderStatus(){
     const b=document.getElementById('tutorBanner');
+    const usage=document.getElementById('tutorUsage');
     if(!b)return;
-    if(this.isDemo()){
-      b.hidden=false;
-      b.innerHTML='🧪 <b>Demo mode.</b> You\'re seeing sample replies. To get real AI tutoring, deploy the backend and '+
-        '<button class="link" onclick="TUTOR.openSettings()">connect it here</button>. See the README for 2-minute setup.';
-    } else {
-      b.hidden=true;
+    const m=this.mode();
+    if(m==='backend'){
+      if(usage)usage.textContent='Advanced backend';
+      b.hidden=false;b.className='tutor-banner';
+      b.innerHTML='🔌 Using your optional API backend. <button class="link" onclick="TUTOR.openSettings()">Change</button>';
+      return;
+    }
+    if(m==='demo'){
+      if(usage)usage.textContent='Demo mode';
+      b.hidden=false;b.className='tutor-banner';
+      b.innerHTML='🧪 <b>Demo mode.</b> Your browser/device doesn\'t support local AI (WebGPU), so you\'ll see sample replies. Flashcards, Duolingo and daily challenges all still work. Tip: a recent desktop Chrome or Edge enables the free local tutor.';
+      return;
+    }
+    // local
+    if(this.localState==='ready'){
+      if(usage)usage.textContent='🖥️ Local AI · $0';
+      b.hidden=false;b.className='tutor-banner ok';
+      b.innerHTML='✅ <b>Local AI ready.</b> Runs on your device — free, private, no API key.';
+      return;
+    }
+    if(this.localState==='loading'){
+      if(usage)usage.textContent='Loading…';
+      b.hidden=false;b.className='tutor-banner';
+      b.innerHTML='⏳ <b>Loading the local AI…</b> The model downloads to your device the first time (a few hundred MB), then it\'s cached for next time. You can keep this tab open.'+
+        '<div class="tutor-progress"><div class="tutor-progress-fill" id="tutorProgFill" style="width:'+Math.round(this.loadPct*100)+'%"></div></div>'+
+        '<div class="tutor-prog-text" id="tutorProgText">'+escapeHtml(this.loadText||'Starting…')+'</div>';
+      return;
+    }
+    if(this.localState==='error'){
+      if(usage)usage.textContent='Demo mode';
+      b.hidden=false;b.className='tutor-banner';
+      b.innerHTML='⚠️ <b>Couldn\'t load the local AI.</b> '+escapeHtml(this.loadText||'')+' Showing demo replies for now. <button class="link" onclick="TUTOR.loadLocal()">Try again</button>';
+      return;
+    }
+    // idle, supported, not loaded yet
+    if(usage)usage.textContent='Free local AI';
+    b.hidden=false;b.className='tutor-banner';
+    b.innerHTML='🆓 <b>Free local AI tutor.</b> It runs entirely in your browser on your device — <b>$0</b>, no API key, private. The first load downloads the model (a few hundred MB, cached after that).'+
+      '<div class="tutor-banner-actions"><button class="dc-btn dc-ask" onclick="TUTOR.loadLocal()">⬇️ Start local AI tutor</button></div>';
+  },
+  renderProgress(p){
+    if(p&&typeof p.progress==='number')this.loadPct=p.progress;
+    if(p&&p.text)this.loadText=p.text;
+    const fill=document.getElementById('tutorProgFill');
+    const txt=document.getElementById('tutorProgText');
+    if(fill)fill.style.width=Math.round(this.loadPct*100)+'%';
+    if(txt)txt.textContent=this.loadText||'';
+  },
+  async loadLocal(){
+    if(!this.supported()){this.localState='idle';this.renderStatus();APP.toast('This device has no WebGPU support');return;}
+    if(this.localState==='loading'||this.localState==='ready')return;
+    this.localEnabled=true;try{localStorage.setItem(this.KEY_LOCAL,'1');}catch(e){}
+    this.localState='loading';this.loadPct=0;this.loadText='Starting…';this.renderStatus();
+    track('ai_tutor_local_load_start',{model:window.HANLU_LLM&&window.HANLU_LLM.modelId});
+    try{
+      await window.HANLU_LLM.load((p)=>this.renderProgress(p));
+      this.localState='ready';this.renderStatus();
+      APP.toast('Local AI ready ✓ — $0 per message');
+      track('ai_tutor_local_ready');
+    }catch(err){
+      this.localState='error';
+      this.loadText=(err&&err.message)?err.message:'Load failed.';
+      this.renderStatus();
+      track('ai_tutor_local_error');
     }
   },
-
-  // ---- usage limit (local, soft) ----
-  getUsage(){
-    const today=new Date().toISOString().slice(0,10);
-    let u={date:today,count:0};
-    try{const raw=localStorage.getItem(this.KEY_USAGE);if(raw){const p=JSON.parse(raw);if(p&&p.date===today)u=p;}}catch(e){}
-    return u;
-  },
-  bumpUsage(){
-    const u=this.getUsage();u.count++;
-    try{localStorage.setItem(this.KEY_USAGE,JSON.stringify(u));}catch(e){}
-    this.updateUsageLabel();
-  },
-  limitReached(){return this.getUsage().count>=this.DAILY_LIMIT;},
-  updateUsageLabel(){
-    const el=document.getElementById('tutorUsage');if(!el)return;
-    if(this.isDemo()){el.textContent='Demo mode';el.classList.remove('warn');return;}
-    const left=Math.max(0,this.DAILY_LIMIT-this.getUsage().count);
-    el.textContent=`${left}/${this.DAILY_LIMIT} left today`;
-    el.classList.toggle('warn',left<=5);
+  async ensureLocal(){
+    if(this.localState==='ready')return;
+    await this.loadLocal();
+    if(this.localState!=='ready')throw new Error(this.loadText||'Local AI is not available.');
   },
 
   // ---- rendering ----
@@ -4906,7 +4966,7 @@ const TUTOR = {
   renderMessages(){
     const box=document.getElementById('tutorMessages');if(!box)return;
     if(!this.messages.length){
-      box.innerHTML='<div class="tutor-empty"><span class="te-emoji">🧧</span>你好! I\'m your Mandarin tutor. Ask me to explain a word, check a sentence, quiz you, or teach grammar — tap a suggestion below or just type.</div>';
+      box.innerHTML='<div class="tutor-empty"><span class="te-emoji">🧧</span>你好! I\'m your free local Mandarin tutor. Ask me to explain a word, check a sentence, quiz you, or teach grammar — tap a suggestion below or just type.</div>';
       return;
     }
     box.innerHTML=this.messages.map(m=>{
@@ -4917,7 +4977,7 @@ const TUTOR = {
     this.scrollToBottom();
   },
   fmt(text){
-    let s=escapeHtml(text);
+    let s=escapeHtml(text||'');
     s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
     s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
     const lines=s.split(/\n/);
@@ -4942,10 +5002,7 @@ const TUTOR = {
   hideTyping(){const d=document.getElementById('tutorTyping');if(d)d.remove();},
   scrollToBottom(){const box=document.getElementById('tutorMessages');if(box)box.scrollTop=box.scrollHeight;},
   autoGrow(ta){ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,140)+'px';},
-  setLoading(on){
-    this.loading=on;
-    const btn=document.getElementById('tutorSend');if(btn)btn.disabled=on;
-  },
+  setLoading(on){this.loading=on;const btn=document.getElementById('tutorSend');if(btn)btn.disabled=on;},
   save(){try{localStorage.setItem(this.KEY_CHAT,JSON.stringify(this.messages.slice(-this.HISTORY_KEEP)));}catch(e){}},
 
   // ---- send flow ----
@@ -4953,7 +5010,7 @@ const TUTOR = {
     if(e&&e.preventDefault)e.preventDefault();
     const ta=document.getElementById('tutorInput');
     const text=(ta?ta.value:'').trim();
-    if(!text)return false;            // empty messages are blocked
+    if(!text)return false;                  // empty messages are blocked
     if(ta){ta.value='';this.autoGrow(ta);}
     this.send(text);
     return false;
@@ -4962,74 +5019,91 @@ const TUTOR = {
     text=(text||'').trim();
     if(!text||this.loading)return;
     if(text.length>this.MAX_LEN)text=text.slice(0,this.MAX_LEN);
-    // ensure we're on the tutor view
     if(APP.state.currentView!=='tutor')APP.go('tutor');
+    const m=this.mode();
 
-    if(!this.isDemo()&&this.limitReached()){
-      this.messages.push({role:'assistant',error:true,content:`You've hit today's local limit of ${this.DAILY_LIMIT} messages (a guard so you don't burn API credits). It resets tomorrow — or raise DAILY_LIMIT in the code.`});
+    if(m==='backend'&&this.limitReached()){
+      this.messages.push({role:'assistant',error:true,content:`You've hit today's local limit of ${this.DAILY_LIMIT} messages on the optional paid backend. It resets tomorrow.`});
       this.renderMessages();this.save();return;
     }
 
     this.messages.push({role:'user',content:text});
     this.renderMessages();this.save();
-    track('ai_tutor_message',{mode:this.isDemo()?'demo':'live'});
-    this.setLoading(true);this.showTyping();
+    track('ai_tutor_message',{mode:m});
+    this.setLoading(true);
 
     try{
       let reply;
-      if(this.isDemo()){
-        await new Promise(r=>setTimeout(r,500));
-        reply=this.mockReply(text);
-      }else{
+      if(m==='local'){
+        if(this.localState!=='ready')await this.ensureLocal();  // may download the model
+        this.showTyping();
+        reply=await this.streamLocal();
+      }else if(m==='backend'){
+        this.showTyping();
         reply=await this.callBackend();
         this.bumpUsage();
+      }else{
+        this.showTyping();
+        await new Promise(r=>setTimeout(r,500));
+        reply=this.mockReply(text);
       }
       this.hideTyping();
       this.messages.push({role:'assistant',content:reply});
       this.renderMessages();this.save();
     }catch(err){
       this.hideTyping();
-      this.messages.push({role:'assistant',error:true,content:this.errText(err)});
+      this.messages.push({role:'assistant',error:true,content:this.errText(err,m)});
       this.renderMessages();this.save();
-      track('ai_tutor_error');
+      track('ai_tutor_error',{mode:m});
     }finally{
       this.setLoading(false);
+      this.renderStatus();
     }
+  },
+  // Stream the local model's reply into a live bubble for snappier UX.
+  async streamLocal(){
+    const box=document.getElementById('tutorMessages');
+    let bubble=null;
+    const payload=[{role:'system',content:this.SYSTEM}].concat(
+      this.messages.filter(x=>!x.error).slice(-this.SEND_TURNS).map(x=>({role:x.role,content:x.content}))
+    );
+    const full=await window.HANLU_LLM.chat(payload,{onToken:(d,acc)=>{
+      if(!bubble){this.hideTyping();bubble=document.createElement('div');bubble.className='tutor-msg ai';box.appendChild(bubble);}
+      bubble.innerHTML=this.fmt(acc);this.scrollToBottom();
+    }});
+    if(bubble)bubble.remove(); // re-rendered cleanly from the messages array
+    if(!full||!full.trim())throw new Error('The local AI returned an empty reply.');
+    return full;
+  },
+  normalizeEndpoint(base){
+    base=(base||'').trim().replace(/\/+$/,'');
+    if(!base)return '';
+    return /\/api\/chat$/.test(base)?base:base+'/api/chat';
   },
   async callBackend(){
-    const url=this.endpoint();
-    // send only role/content of the most recent turns
-    const payload={messages:this.messages.filter(m=>!m.error).slice(-this.SEND_TURNS).map(m=>({role:m.role,content:m.content}))};
+    const url=this.normalizeEndpoint(this.endpoint);
+    const payload={messages:this.messages.filter(x=>!x.error).slice(-16).map(x=>({role:x.role,content:x.content}))};
     let res;
-    try{
-      res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    }catch(e){throw new Error('NETWORK');}
-    let data={};
-    try{data=await res.json();}catch(e){}
-    if(!res.ok){const m=data&&data.error?data.error:`Request failed (${res.status}).`;throw new Error(m);}
-    if(!data||!data.reply)throw new Error('The tutor returned an empty reply.');
+    try{res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});}
+    catch(e){throw new Error('NETWORK');}
+    let data={};try{data=await res.json();}catch(e){}
+    if(!res.ok){throw new Error(data&&data.error?data.error:`Request failed (${res.status}).`);}
+    if(!data||!data.reply)throw new Error('The backend returned an empty reply.');
     return data.reply;
   },
-  errText(err){
-    const m=(err&&err.message)||'';
-    if(m==='NETWORK'){
-      return this.isDemo()
-        ? 'Network error. (You\'re in demo mode — connect a backend in ⚙️ settings for real replies.)'
-        : 'Couldn\'t reach the AI backend. Check that your backend URL is correct in ⚙️ settings and that it\'s deployed.';
+  errText(err,mode){
+    const msg=(err&&err.message)||'';
+    if(mode==='local'){
+      return 'The local AI hit an error: '+(msg||'unknown')+'. It needs a WebGPU-capable browser and enough memory. You can still use flashcards & daily challenges.';
     }
-    return m||'Something went wrong. Please try again.';
+    if(msg==='NETWORK')return 'Couldn\'t reach your backend. Check the URL in ⚙️ Advanced settings.';
+    return msg||'Something went wrong. Please try again.';
   },
   mockReply(text){
-    const t=text.toLowerCase();
-    let body;
-    if(t.includes('quiz')){
-      body='Sure! Quick quiz (demo) 📝\n\n1. What does 你好 (nǐ hǎo) mean?\n2. How do you say "thank you"?\n3. What tone is the *ǎ* in 好?\n\nReply with your answers and I\'ll check them — once a real backend is connected.';
-    }else if(t.includes('correct')){
-      body='In demo mode I can\'t check your sentence yet, but here\'s the format I\'d use:\n\n- **You wrote:** (your sentence)\n- **Corrected:** the fixed version with pinyin\n- **Why:** a one-line explanation\n\nConnect a backend (⚙️) to get real corrections.';
-    }else{
-      body='This is a **demo reply** so you can see how the tutor works ✨\n\nExample of a real answer:\n好 (hǎo) means "good". \n- 你好 (nǐ hǎo) — hello\n- 很好 (hěn hǎo) — very good\n\nConnect a backend in ⚙️ settings for real, personalised tutoring.';
-    }
-    return body;
+    const t=(text||'').toLowerCase();
+    if(t.includes('quiz'))return 'Quick quiz (demo) 📝\n\n1. What does 你好 (nǐ hǎo) mean?\n2. How do you say "thank you"?\n3. What tone is the *ǎ* in 好?\n\nThe free local AI gives real, interactive answers — open it with "Start local AI tutor" on a WebGPU browser.';
+    if(t.includes('correct'))return 'In demo mode I can\'t check your sentence, but the real local tutor shows:\n\n- **You wrote:** your sentence\n- **Corrected:** the fixed version with pinyin\n- **Why:** a one-line reason\n\nStart the free local AI to get real corrections.';
+    return 'This is a **demo reply** so the UI works without WebGPU ✨\n\nExample of a real answer:\n好 (hǎo) means "good".\n- 你好 (nǐ hǎo) — hello\n- 很好 (hěn hǎo) — very good\n\nThe free local AI runs on your device at $0 — start it on a recent desktop Chrome/Edge.';
   },
 
   clear(){
@@ -5039,28 +5113,96 @@ const TUTOR = {
     track('ai_tutor_cleared');
   },
 
-  // ---- settings ----
+  // ---- optional paid-backend usage cap ----
+  getUsage(){
+    const today=new Date().toISOString().slice(0,10);
+    let u={date:today,count:0};
+    try{const raw=localStorage.getItem(this.KEY_USAGE);if(raw){const p=JSON.parse(raw);if(p&&p.date===today)u=p;}}catch(e){}
+    return u;
+  },
+  bumpUsage(){const u=this.getUsage();u.count++;try{localStorage.setItem(this.KEY_USAGE,JSON.stringify(u));}catch(e){}},
+  limitReached(){return this.getUsage().count>=this.DAILY_LIMIT;},
+
+  // ---- advanced settings ----
   openSettings(){
     const inp=document.getElementById('tutorEndpointInput');
-    if(inp)inp.value=this.cfg.endpoint||'';
+    if(inp)inp.value=this.endpoint||'';
+    const mid=document.getElementById('tutorModelId');
+    if(mid)mid.textContent=(window.HANLU_LLM&&window.HANLU_LLM.modelId)||'(WebGPU not available)';
     document.getElementById('tutorModal').classList.add('open');
-    setTimeout(()=>{if(inp)inp.focus();},80);
   },
   closeSettings(){document.getElementById('tutorModal').classList.remove('open');},
   saveSettings(){
     const inp=document.getElementById('tutorEndpointInput');
-    this.cfg.endpoint=(inp?inp.value:'').trim();
+    this.endpoint=(inp?inp.value:'').trim();
     try{
-      if(this.cfg.endpoint)localStorage.setItem(this.KEY_CFG,this.cfg.endpoint);
-      else localStorage.removeItem(this.KEY_CFG);
+      if(this.endpoint)localStorage.setItem(this.KEY_ENDPOINT,this.endpoint);
+      else localStorage.removeItem(this.KEY_ENDPOINT);
     }catch(e){}
     this.closeSettings();
-    this.renderBanner();this.updateUsageLabel();
-    APP.toast(this.isDemo()?'Demo mode (no backend set)':'Backend connected ✓');
+    this.renderStatus();
+    APP.toast(this.endpoint?'Using your API backend':'Back to free local AI');
   }
 };
 
 document.addEventListener('DOMContentLoaded',()=>APP.init());
+</script>
+
+<!-- Free local AI tutor — WebLLM runs a small LLM in the browser over WebGPU.
+     No API key, no server, $0 per message. The library (~small JS) loads from a
+     CDN here; the model weights only download when the user starts the tutor. -->
+<script type="module">
+import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+
+// ── LOCAL_TUTOR_MODEL_ID: which model the free local tutor uses. Change to swap. ──
+// Smaller = faster + smaller download but weaker; larger = better but heavier.
+// All of these run fully in-browser via WebGPU:
+//   "Qwen2.5-1.5B-Instruct-q4f16_1-MLC"  ← DEFAULT: best Chinese for the size (~1.1 GB)
+//   "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"  ← lighter & faster, weaker (~0.5 GB)
+//   "Qwen3-0.6B-q4f16_1-MLC"             ← newer tiny model
+//   "Llama-3.2-1B-Instruct-q4f32_1-MLC"  ← general fallback (not Chinese-specialised)
+// If your GPU lacks float16 support, use the matching "...-q4f32_1-MLC" variant.
+const LOCAL_TUTOR_MODEL_ID = "Qwen2.5-1.5B-Instruct-q4f16_1-MLC";
+
+window.HANLU_LLM = {
+  modelId: LOCAL_TUTOR_MODEL_ID,
+  supported: typeof navigator !== 'undefined' && !!navigator.gpu,  // WebGPU present?
+  _engine: null,
+  _loading: null,
+  isReady(){ return !!this._engine; },
+  // Downloads (first time) + initialises the model. onProgress receives WebLLM's
+  // {progress: 0..1, text} updates. Cached by the browser after the first load.
+  async load(onProgress){
+    if(this._engine) return this._engine;
+    if(this._loading) return this._loading;
+    this._loading = (async () => {
+      const engine = await webllm.CreateMLCEngine(LOCAL_TUTOR_MODEL_ID, {
+        initProgressCallback: (p) => { try { onProgress && onProgress(p); } catch(e){} }
+      });
+      this._engine = engine;
+      return engine;
+    })();
+    try { return await this._loading; }
+    catch(e){ this._loading = null; throw e; }
+  },
+  // Streams a chat completion; calls opts.onToken(delta, accumulated) per chunk.
+  async chat(messages, opts){
+    opts = opts || {};
+    if(!this._engine) throw new Error('Local AI not loaded yet.');
+    const stream = await this._engine.chat.completions.create({
+      messages,
+      stream: true,
+      temperature: opts.temperature != null ? opts.temperature : 0.6,
+      max_tokens: opts.max_tokens != null ? opts.max_tokens : 480,
+    });
+    let full = '';
+    for await (const chunk of stream){
+      const delta = (chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content) || '';
+      if(delta){ full += delta; if(opts.onToken){ try { opts.onToken(delta, full); } catch(e){} } }
+    }
+    return full.trim();
+  }
+};
 </script>
 
 <!-- Firebase — live leaderboard backend (loads from CDN; flashcards still work offline without it) -->

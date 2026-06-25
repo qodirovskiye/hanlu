@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Hànlù — Chinese learning app. Static frontend (index.html) + optional serverless AI tutor (api/chat.js).",
+  "description": "Hànlù — Chinese learning app. Static frontend (index.html) with a FREE in-browser AI tutor (WebLLM/WebGPU, loaded from CDN). This package.json only declares deps for the OPTIONAL paid backend (api/chat.js); the app needs no build step or npm install to run.",
   "scripts": {
     "dev": "python3 -m http.server 8777 --bind 127.0.0.1",
     "start": "python3 -m http.server 8777 --bind 127.0.0.1"

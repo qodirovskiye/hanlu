@@ -1,6 +1,13 @@
 // ============================================================================
-//  Hànlù AI Tutor — serverless chat endpoint  (POST /api/chat)
+//  Hànlù AI Tutor — OPTIONAL paid backend  (POST /api/chat)
 // ----------------------------------------------------------------------------
+//  ⚠️ OPTIONAL / ADVANCED — NOT used by default.
+//  Hànlù's AI tutor runs FREE in the browser via WebLLM (WebGPU) with no API
+//  key and no server. This file exists ONLY for users who would rather use a
+//  paid hosted model (Claude/OpenAI). It is used only if you deploy it and
+//  paste its URL into the tutor's ⚙️ Advanced settings. You can ignore or
+//  delete it and the free local tutor keeps working.
+//
 //  Runs on Vercel (Node 18+ serverless function). The browser NEVER sees your
 //  API key — it lives only in this server's environment variables.
 //

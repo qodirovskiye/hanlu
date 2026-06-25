@@ -1,14 +1,14 @@
 # Hànlù 汉语之旅 — Chinese learning app
 
 A free, single-page Chinese-learning web app: HSK 1–3 + the full Duolingo Mandarin
-vocabulary as smart flashcards (pinyin tone colors, audio, spaced review), an
-**AI Mandarin tutor**, streaks, themes, and a live leaderboard.
+vocabulary as smart flashcards (pinyin tone colors, audio, spaced review), a
+**free in-browser AI Mandarin tutor**, streaks, themes, and a live leaderboard.
 
 **Live:** https://qodirovskiye.github.io/hanlu/
 
 The app is a single static `index.html` (no build step) deployed on GitHub Pages.
-The AI tutor talks to a tiny serverless backend (`api/chat.js`) so your API key
-never ships to the browser.
+The AI tutor runs an open LLM **locally in your browser** via
+[WebLLM](https://github.com/mlc-ai/web-llm) + WebGPU — **no API key, no server, $0 per message.**
 
 ---
 
@@ -16,27 +16,47 @@ never ships to the browser.
 
 | Path | What it is |
 |------|------------|
-| `index.html` | The entire frontend — UI, flashcard engine, HSK + Duolingo decks, AI tutor UI, themes, leaderboard. |
-| `api/chat.js` | Serverless AI-tutor endpoint (`POST /api/chat`). Anthropic Claude by default, OpenAI switchable. Keeps the API key server-side. |
-| `package.json` | Declares the backend's SDK dependencies (for Vercel). |
-| `vercel.json` | Vercel function config. |
-| `.env.example` | The environment variables the backend needs. Copy to `.env.local`. |
+| `index.html` | The entire frontend — UI, flashcard engine, HSK + Duolingo decks, the **local AI tutor** (WebLLM), themes, leaderboard. |
+| `api/chat.js` | **Optional / advanced.** A paid hosted backend (Claude/OpenAI). Not used by default; safe to ignore or delete. |
+| `package.json`, `vercel.json`, `.env.example` | Config for the **optional** paid backend only. The app needs none of these to run. |
 
 ---
 
-## What was added (AI tutor + engagement)
+## AI Tutor — free, local, $0
 
-- **🤖 AI Tutor tab** — a chat coach: explains words/grammar with hanzi + pinyin + English,
-  quizzes you, corrects your sentences, makes practice drills. Chat history is saved
-  in `localStorage`, with suggested-prompt chips, loading/error states, a clear button,
-  and a **local daily message limit** so you don't accidentally burn API credits.
-- **Demo mode** — with no backend configured, the tutor returns sample replies and shows
-  a friendly "connect a backend" banner, so the UI is fully testable offline.
-- **Daily Challenge** — a deterministic "word of the day" on the home page, with audio and
-  a one-tap "Ask the AI tutor" shortcut.
-- **Share button** — native share / copy-to-clipboard ("I'm learning Chinese with Hànlù…").
-- **SEO + social** — title, meta description, Open Graph + Twitter card tags, theme-color.
-- Analytics events fire through the existing `gtag` wrapper **only if `gtag` exists**.
+The tutor is your Mandarin coach: explains words/grammar with **hanzi + pinyin + English**,
+quizzes you, corrects your sentences, makes short practice drills. It uses suggested-prompt
+chips, saves chat history in `localStorage`, and shows clean loading/error states.
+
+**How it works:** open the **🤖 AI Tutor** tab and click **"Start local AI tutor."** The
+first time, a small open model downloads to your device (a few hundred MB; cached afterwards),
+then runs entirely in your browser over WebGPU. Nothing is sent to any server, and there is no
+per-message cost.
+
+> "This free AI runs locally in your browser. The first load downloads the model to your device.
+> No API key is used."
+
+**Default model:** `Qwen2.5-1.5B-Instruct-q4f16_1-MLC` (a small Qwen instruct model — good at
+Chinese, realistic on normal laptops). To change it, edit **`LOCAL_TUTOR_MODEL_ID`** in the
+WebLLM `<script type="module">` near the bottom of `index.html`. Lighter/heavier options are
+listed in the comment there (e.g. `Qwen2.5-0.5B-Instruct-q4f16_1-MLC` for slower devices).
+
+### Requirements & limitations (please read)
+
+- **Modern browser with WebGPU** — recent desktop **Chrome or Edge** (Safari/Firefox support is
+  improving). On unsupported browsers/devices the tutor shows a friendly notice and **demo mode**
+  (sample replies); flashcards, Duolingo and daily challenges keep working.
+- **First load downloads the model** (a few hundred MB). It's cached for next time.
+- **Slower and weaker than Claude/OpenAI.** It's a small model running on your device, so it can
+  make mistakes and won't match a big cloud model — answers are kept short on purpose. Double-check
+  important details.
+- Best on a laptop/desktop with a few GB of free RAM/VRAM.
+
+### Engagement extras
+
+- **Daily Challenge** — a deterministic "word of the day" with audio and a one-tap "Ask the AI tutor."
+- **Share** — native share / copy-to-clipboard.
+- **SEO** — title, meta description, Open Graph + Twitter tags.
 
 Existing HSK/Duolingo flashcards, progress, streaks, themes and leaderboard are unchanged.
 
@@ -44,104 +64,44 @@ Existing HSK/Duolingo flashcards, progress, streaks, themes and leaderboard are 
 
 ## Run locally
 
-No build step. Serve the folder over HTTP (localStorage needs http/https, not `file://`):
+No build step. Serve the folder over HTTP (localStorage + WebGPU need http/https, not `file://`):
 
 ```bash
 python3 -m http.server 8777 --bind 127.0.0.1
 # then open http://127.0.0.1:8777/
 ```
 
-Locally the AI tutor runs in **demo mode** (sample replies) unless you point it at a
-deployed backend in the tutor's ⚙️ settings.
+`localhost` is a secure context, so the local AI works there too (on a WebGPU browser).
+
+## Deploy
+
+It's already on **GitHub Pages** (served from `main` at the repo root). Push to `main` and Pages
+redeploys automatically. **That's the whole deploy** — the AI tutor needs no backend.
 
 ---
 
-## Deploy the frontend
+## Optional / advanced: use a paid hosted backend
 
-It's already on **GitHub Pages** (served from `main` at the repo root). Push to `main`
-and Pages redeploys automatically. Nothing else is required for the flashcards.
+You almost certainly don't need this — the free local tutor works without it. It exists only if
+you'd rather use a paid cloud model (e.g. Claude or OpenAI) instead of the in-browser one.
 
----
+<details>
+<summary>Show optional paid-backend setup</summary>
 
-## Deploy the backend (AI tutor) — Vercel
-
-GitHub Pages can't run server code, so the tutor's API lives on Vercel.
-
-1. **Create a Vercel project** from this repo (or a copy):
+1. Deploy `api/chat.js` to **Vercel**:
    ```bash
-   npm i -g vercel    # once
-   vercel             # from the repo root → follow prompts
+   npm i -g vercel && vercel        # from the repo root
    ```
-   Vercel auto-detects `api/chat.js` as a serverless function and installs the
-   dependencies in `package.json`.
+   Vercel auto-detects `api/chat.js` and installs `package.json` deps.
+2. In **Vercel → Settings → Environment Variables**, set:
+   - `AI_PROVIDER` = `anthropic` (or `openai`)
+   - `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`)
+   - `AI_MODEL` *(optional)* — e.g. `claude-haiku-4-5` to keep costs low
+   - then `vercel --prod`.
+3. In the app: **🤖 AI Tutor → ⚙️ → "Use a custom paid API backend"** → paste your Vercel URL.
 
-2. **Add your API key** in Vercel → **Project → Settings → Environment Variables**:
+The API key lives only in the backend's environment variables — never in the browser, never
+committed (`.env`/`.env.local` are gitignored). The backend validates input, caps output, and
+rate-limits per IP. **This path costs money per message; the default local tutor does not.**
 
-   | Name | Value |
-   |------|-------|
-   | `AI_PROVIDER` | `anthropic` |
-   | `ANTHROPIC_API_KEY` | your key from console.anthropic.com |
-   | `AI_MODEL` | *(optional)* e.g. `claude-haiku-4-5` for cost (see below) |
-
-   Then **redeploy** (`vercel --prod`) so the variables take effect.
-
-3. **Connect the frontend to it:** open the app → **🤖 AI Tutor → ⚙️** → paste your
-   Vercel base URL (e.g. `https://your-app.vercel.app`) → Save. The app calls
-   `<url>/api/chat`. (This is stored in your browser's localStorage.)
-
-> **Tip — all-in-one option:** if you deploy the *whole repo* to Vercel (frontend + API
-> together), the tutor auto-detects the same-origin `/api/chat` and you don't need to paste
-> a URL at all.
-
-### Local backend dev
-
-```bash
-cp .env.example .env.local   # fill in ANTHROPIC_API_KEY
-vercel dev                   # serves the frontend + /api/chat on localhost
-```
-
----
-
-## Environment variables
-
-Set these on the backend host (Vercel), never in the frontend. See `.env.example`.
-
-| Variable | Required | Default | Notes |
-|----------|----------|---------|-------|
-| `AI_PROVIDER` | no | `anthropic` | `anthropic` or `openai` |
-| `ANTHROPIC_API_KEY` | when provider=anthropic | — | from console.anthropic.com |
-| `OPENAI_API_KEY` | when provider=openai | — | from platform.openai.com |
-| `AI_MODEL` | no | `claude-opus-4-8` / `gpt-4o-mini` | model id override |
-| `ALLOWED_ORIGINS` | no | Pages + localhost | comma-separated CORS allowlist |
-
----
-
-## Switch AI provider / model
-
-- **Provider:** set `AI_PROVIDER=openai` (and `OPENAI_API_KEY`) to use OpenAI instead of Claude. Redeploy.
-- **Model:** set `AI_MODEL`. Anthropic options: `claude-opus-4-8` (top quality),
-  `claude-sonnet-4-6` (balanced), `claude-haiku-4-5` (cheapest). OpenAI: e.g. `gpt-4o-mini`.
-
----
-
-## Controlling cost
-
-A vocabulary tutor doesn't need the most expensive model. To keep spend low:
-
-1. **Use a cheaper model:** `AI_MODEL=claude-haiku-4-5` (~5× cheaper than Opus, still great).
-2. **Output is capped** server-side (`MAX_OUTPUT_TOKENS` in `api/chat.js`, default 800).
-3. **Per-IP rate limiting** (`RATE_MAX`/`RATE_WIN_MS`) is on by default (best-effort; for a
-   hard quota, back it with Vercel KV / Upstash Redis — see the comment in `api/chat.js`).
-4. **Local daily message cap** in the UI (`TUTOR.DAILY_LIMIT`, default 40) warns and blocks
-   before you over-spend during normal use.
-5. Set a **spend limit** in your Anthropic/OpenAI billing console as a backstop.
-
----
-
-## Security notes
-
-- The API key lives **only** in the backend's environment variables — never in `index.html`,
-  never committed. `.env` / `.env.local` are gitignored.
-- The backend validates input (roles, per-message and total length), caps output, and
-  rate-limits per IP.
-- CORS is restricted to the Pages origin + localhost by default (`ALLOWED_ORIGINS` to change).
+</details>
